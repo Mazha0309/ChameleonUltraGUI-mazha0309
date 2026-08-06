@@ -1,0 +1,236 @@
+name: Build APP
+
+# manual and on push
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      found: ${{ steps.PR.outputs.pr_found }}
+    steps:
+      - uses: 8BitJonny/gh-get-current-pr@2.2.0
+        id: PR
+
+  build-android:
+    needs: check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "zulu"
+          java-version: "21"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+      - run: flutter pub get
+      - run: flutter build apk --build-number ${{ github.run_number }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: chameleonultragui/build/app/outputs/flutter-apk/app-release.apk
+
+  build-windows:
+    needs: check
+    runs-on: windows-2022
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+      - run: flutter config --enable-windows-desktop
+      - run: flutter build windows --build-number ${{ github.run_number }}
+      - run: flutter test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: chameleonultragui/build/windows/x64/runner/Release/
+      - name: Install NSIS
+        run: choco install nsis --version=3.12
+      - name: Create NSIS installer
+        working-directory: ${{ github.workspace }}
+        run: '& "${env:ProgramFiles(x86)}\NSIS\makensis.exe" nsis-installer.nsi'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: chameleonultragui-setup-win.exe
+
+  build-linux:
+    needs: check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+      - run:
+          sudo apt-get update -y && sudo apt-get install -y ninja-build libgtk-3-dev
+          clang
+      - run: flutter config --enable-linux-desktop
+      - run: flutter build linux --build-number ${{ github.run_number }}
+      - run: flutter test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: chameleonultragui/build/linux/x64/release/bundle
+      - run: dart pub global activate flutter_to_debian
+      - run: flutter_to_debian
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-debian
+          path: chameleonultragui/build/linux/x64/release/debian
+
+  build-linux-legacy:
+    needs: check
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:20.04
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
+    steps:
+      - uses: actions/checkout@v3
+      - run:
+          apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y
+          ninja-build libgtk-3-dev clang jq build-essential curl git cmake lld
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+      - run: git config --global safe.directory '*'
+      - run: flutter config --enable-linux-desktop
+      - run: flutter build linux --build-number ${{ github.run_number }}
+      - run: flutter test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-legacy
+          path: chameleonultragui/build/linux/x64/release/bundle
+
+  build-macos:
+    needs: check
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+      - name: Enable macOS
+        run: flutter config --enable-macos-desktop
+      - name: Install tools
+        run: brew install automake libtool create-dmg
+      - run: flutter build macos --release
+
+  build-ios:
+    needs: check
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ./chameleonultragui
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+      - name: Install tools
+        run: brew install automake libtool create-dmg
+      - run:
+          flutter build ios --release 2>&1 | tee /dev/tty | grep -q "Xcode build
+          done" && exit 0 || exit 1
+
+  create_dev_release:
+    permissions:
+      contents: write
+    name: Create dev pre-release with artifacts
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs:
+      - build-android
+      - build-windows
+      - build-linux
+      - build-linux-legacy
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "{apk,windows,windows-installer,linux,linux-debian,linux-legacy}"
+          path: release-artifacts
+      - name: Create zip files from artifacts
+        run: |
+          cd release-artifacts
+          for dir in */; do
+            artifact_name="${dir%/}"
+            zip -r "${artifact_name}.zip" "$dir"
+          done
+      - name: Upload to dev release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            Auto-generated packages from latest commit on `main` branch.
+            Built from commit ${{ github.sha }}
+          tag_name: dev
+          name: Development release
+          draft: false
+          prerelease: true
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          files: release-artifacts/*.zip
+      - name: Fix up release tag
+        run: |
+          git tag -f dev
+          git push --tags -f
+
+  create_release:
+    permissions:
+      contents: write
+    name: Create tagged release with artifacts
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'dev')
+    needs:
+      - build-android
+      - build-windows
+      - build-linux
+      - build-linux-legacy
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "{apk,windows,windows-installer,linux,linux-debian,linux-legacy}"
+          path: release-artifacts
+      - name: Create zip files from artifacts
+        run: |
+          cd release-artifacts
+          for dir in */; do
+            artifact_name="${dir%/}"
+            zip -r "${artifact_name}.zip" "$dir"
+          done
+      - name: Upload to tagged release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            Auto-generated packages for release ${{ github.ref_name }}
+            Built from commit ${{ github.sha }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          append_body: true
+          files: release-artifacts/*.zip
