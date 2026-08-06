@@ -111,7 +111,7 @@ jobs:
         run: |
           cd chameleonultragui/build/macos/Build/Products/Release
           hdiutil create -volname "ChameleonUltraGUI-mazha0309" \
-            -srcfolder chameleonultragui.app \
+            -srcfolder Runner.app \
             -ov -format UDZO ../../../../../../ChameleonUltraGUI-mazha0309-macos.dmg
       - name: Upload DMG to Release
         uses: softprops/action-gh-release@v2
