@@ -55,8 +55,14 @@ class GeofenceService {
       _log('guard enabled');
       _prefs.setGeofenceEnteredIds([]); // fresh monitoring session
       await _ensurePermission();
-      await _startGuardService();
+      // Start the periodic check FIRST: geofence detection must not depend
+      // on the foreground-service setup succeeding.
       _startPeriodicCheck();
+      try {
+        await _startGuardService();
+      } catch (e) {
+        _log('guard service failed (check still running): $e');
+      }
     } else {
       _log('guard disabled');
       _stopPeriodicCheck();
