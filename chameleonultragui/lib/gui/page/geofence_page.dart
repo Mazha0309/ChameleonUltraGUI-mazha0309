@@ -1,15 +1,20 @@
 import 'dart:async';
+import 'dart:math' as math;
 
+import 'package:amap_flutter_base/amap_flutter_base.dart';
+import 'package:amap_flutter_map/amap_flutter_map.dart' as amap;
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/helpers/geofence.dart';
 import 'package:chameleonultragui/helpers/geofence_service.dart';
+
+/// AMap API key, injected at build time: flutter build apk --dart-define=AMAP_KEY=...
+/// Kept out of the repository on purpose (key is bound to the signing cert).
+const String kAmapKey = String.fromEnvironment('AMAP_KEY');
 
 class GeofencePage extends StatefulWidget {
   const GeofencePage({super.key});
@@ -19,18 +24,19 @@ class GeofencePage extends StatefulWidget {
 }
 
 class GeofencePageState extends State<GeofencePage> {
-  final MapController _mapController = MapController();
+  amap.AMapController? _amapController;
   List<GeofenceConfig> _fences = [];
   bool _guardEnabled = false;
   LatLng? _center;
   LatLng? _myPosition;
-  bool _locating = true;
+  bool _locating = false;
   Timer? _positionTimer;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _initCenter();
   }
 
   void _load() {
@@ -38,44 +44,37 @@ class GeofencePageState extends State<GeofencePage> {
     final prefs = appState.sharedPreferencesProvider;
     _fences = prefs.getGeofences();
     _guardEnabled = prefs.getGeofenceGuardEnabled();
-    _initCenter();
   }
 
   Future<void> _initCenter() async {
-    LatLng fallback = const LatLng(31.2304, 121.4737); // Shanghai default
-    if (_fences.isNotEmpty) {
-      fallback = LatLng(_fences.first.latitude, _fences.first.longitude);
-    }
     try {
-      if (await Geolocator.isLocationServiceEnabled() &&
-          await Geolocator.checkPermission() != LocationPermission.denied) {
-        final pos = await Geolocator.getCurrentPosition(
-          locationSettings:
-              const LocationSettings(accuracy: LocationAccuracy.medium),
-        );
-        _myPosition = LatLng(pos.latitude, pos.longitude);
-        fallback = _myPosition!;
+      if (await GeolocatorIsLocationEnabled() &&
+          await GeolocatorHasPermission()) {
+        final pos =
+            await getCurrentPosition().timeout(const Duration(seconds: 8));
+        if (mounted) {
+          setState(() {
+            _myPosition = LatLng(pos.latitude, pos.longitude);
+            _center = _myPosition;
+          });
+          _amapController
+              ?.moveCamera(amap.CameraUpdate.newLatLngZoom(_center!, 16));
+        }
       }
     } catch (_) {}
     if (mounted) {
-      setState(() {
-        _center = fallback;
-        _locating = false;
-      });
       _startPositionTimer();
     }
   }
 
   void _startPositionTimer() {
     _positionTimer?.cancel();
-    _positionTimer = Timer.periodic(const Duration(milliseconds: 500), (_) async {
+    _positionTimer =
+        Timer.periodic(const Duration(milliseconds: 500), (_) async {
       try {
-        if (await Geolocator.isLocationServiceEnabled() &&
-            await Geolocator.checkPermission() != LocationPermission.denied) {
-          final pos = await Geolocator.getCurrentPosition(
-            locationSettings:
-                const LocationSettings(accuracy: LocationAccuracy.medium),
-          );
+        if (await GeolocatorIsLocationEnabled() &&
+            await GeolocatorHasPermission()) {
+          final pos = await getCurrentPosition();
           if (mounted) {
             setState(() {
               _myPosition = LatLng(pos.latitude, pos.longitude);
@@ -147,12 +146,35 @@ class GeofencePageState extends State<GeofencePage> {
         .setGeofences(_fences);
   }
 
+  /// Approximate a circle fence with a 64-vertex polygon.
+  List<LatLng> _circlePoints(GeofenceConfig fence) {
+    final lat0 = fence.latitude;
+    final lon0 = fence.longitude;
+    final r = fence.radiusMeters;
+    const int n = 64;
+    // meters -> degrees approximations
+    final dLat = r / 111320.0;
+    final dLon = r / (111320.0 * math.cos(lat0 * math.pi / 180.0));
+    return [
+      for (var i = 0; i < n; i++)
+        LatLng(
+          lat0 + dLat * math.cos(2 * math.pi * i / n),
+          lon0 + dLon * math.sin(2 * math.pi * i / n),
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<ChameleonGUIState>();
     final prefs = appState.sharedPreferencesProvider;
     _fences = prefs.getGeofences();
     _guardEnabled = prefs.getGeofenceGuardEnabled();
+
+    final latLngOrNull = (double? lat, double? lng) {
+      if (lat == null || lng == null) return null;
+      return LatLng(lat, lng);
+    };
 
     return Scaffold(
       appBar: AppBar(title: const Text("电子围栏 / Geofence")),
@@ -164,106 +186,100 @@ class GeofencePageState extends State<GeofencePage> {
             value: _guardEnabled,
             onChanged: _toggleGuard,
           ),
+          if (kAmapKey.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(8),
+              child: Text(
+                "未配置高德 Key：flutter build apk --dart-define=AMAP_KEY=你的Key",
+                style: TextStyle(color: Colors.orange),
+              ),
+            ),
           Expanded(
             child: Stack(
-                    children: [
-                      FlutterMap(
-                        mapController: _mapController,
-                        options: MapOptions(
-                          initialCenter: _center!,
-                          initialZoom: 16,
-                          onTap: (tapPosition, point) => _addFence(point),
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://webrd0{1-4}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
-                            fallbackUrl:
-                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName:
-                                'io.chameleon.ultra.mazha0309',
-                          ),
-                          CircleLayer(
-                            circles: [
-                              for (final f in _fences)
-                                if (f.enabled)
-                                  CircleMarker(
-                                    point: LatLng(f.latitude, f.longitude),
-                                    useRadiusInMeter: true,
-                                    radius: f.radiusMeters,
-                                    color: Colors.blue.withValues(alpha: 0.2),
-                                    borderColor: Colors.blue,
-                                    borderStrokeWidth: 1,
-                                  ),
-                            ],
-                          ),
-                          MarkerLayer(
-                            markers: [
-                              if (_myPosition != null)
-                                Marker(
-                                  point: _myPosition!,
-                                  width: 18,
-                                  height: 18,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                          color: Colors.white, width: 2),
-                                    ),
-                                  ),
-                                ),
-                              for (final f in _fences)
-                                Marker(
-                                  point: LatLng(f.latitude, f.longitude),
-                                  width: 34,
-                                  height: 34,
-                                  child: GestureDetector(
-                                    onTap: () => _editFence(f),
-                                    child: Icon(
-                                      Icons.location_on,
-                                      color:
-                                          f.enabled ? Colors.red : Colors.grey,
-                                      size: 34,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      if (_locating)
-                        const Positioned(
-                          top: 8,
-                          left: 0,
-                          right: 0,
-                          child: Center(
-                            child: Chip(
-                              avatar: SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                              label: Text("定位中 / Locating..."),
-                            ),
-                          ),
-                        ),
-                      Positioned(
-                        right: 8,
-                        bottom: 8,
-                        child: FloatingActionButton.small(
-                          onPressed: () async {
-                            final pos = await Geolocator.getCurrentPosition();
-                            setState(() {
-                              _myPosition = LatLng(pos.latitude, pos.longitude);
-                            });
-                            _mapController.move(_myPosition!, 16);
-                          },
-                          child: const Icon(Icons.my_location),
-                        ),
-                      ),
-                    ],
+              children: [
+                amap.AMapWidget(
+                  apiKey: AMapApiKey(
+                      androidKey: kAmapKey.isEmpty ? null : kAmapKey),
+                  privacyStatement: const AMapPrivacyStatement(
+                    hasContains: true,
+                    hasShow: true,
+                    hasAgree: true,
                   ),
+                  initialCameraPosition: amap.CameraPosition(
+                    target: latLngOrNull(
+                            _center?.latitude, _center?.longitude) ??
+                        (_fences.isNotEmpty
+                            ? LatLng(
+                                _fences.first.latitude, _fences.first.longitude)
+                            : const LatLng(31.2304, 121.4737)),
+                    zoom: 16,
+                  ),
+                  onMapCreated: (controller) {
+                    _amapController = controller;
+                  },
+                  onTap: (latLng) => _addFence(latLng),
+                  markers: {
+                    if (_myPosition != null)
+                      amap.Marker(
+                        position: _myPosition!,
+                        icon: amap.BitmapDescriptor.defaultMarkerWithHue(
+                            amap.BitmapDescriptor.hueAzure),
+                      ),
+                    for (final f in _fences)
+                      amap.Marker(
+                        position: LatLng(f.latitude, f.longitude),
+                        icon: amap.BitmapDescriptor.defaultMarkerWithHue(
+                            amap.BitmapDescriptor.hueRed),
+                      ),
+                  },
+                  polygons: {
+                    for (final f in _fences)
+                      if (f.enabled)
+                        amap.Polygon(
+                          points: _circlePoints(f),
+                          strokeColor: const Color(0xAA3B82F6),
+                          fillColor: const Color(0x223B82F6),
+                          strokeWidth: 2,
+                        ),
+                  },
+                ),
+                if (_locating)
+                  const Positioned(
+                    top: 8,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Chip(
+                        avatar: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        label: Text("定位中 / Locating..."),
+                      ),
+                    ),
+                  ),
+                Positioned(
+                  right: 8,
+                  bottom: 8,
+                  child: FloatingActionButton.small(
+                    onPressed: () async {
+                      try {
+                        final pos = await getCurrentPosition();
+                        setState(() {
+                          _myPosition =
+                              LatLng(pos.latitude, pos.longitude);
+                          _center = _myPosition;
+                        });
+                        _amapController?.moveCamera(
+                            amap.CameraUpdate.newLatLngZoom(_center!, 16));
+                      } catch (_) {}
+                    },
+                    child: const Icon(Icons.my_location),
+                  ),
+                ),
+              ],
+            ),
           ),
           Expanded(
             child: _fences.isEmpty
@@ -425,3 +441,19 @@ class GeofenceEditDialogState extends State<GeofenceEditDialog> {
     );
   }
 }
+
+// Thin geolocator wrappers so the page stays testable if the plugin changes.
+Future<bool> GeolocatorIsLocationEnabled() =>
+    geo.Geolocator.isLocationServiceEnabled();
+Future<bool> GeolocatorHasPermission() async {
+  final permission = await geo.Geolocator.checkPermission();
+  if (permission == geo.LocationPermission.denied) {
+    await geo.Geolocator.requestPermission();
+  }
+  return await geo.Geolocator.checkPermission() !=
+      geo.LocationPermission.denied;
+}
+Future<geo.Position> getCurrentPosition() => geo.Geolocator.getCurrentPosition(
+      locationSettings:
+          const geo.LocationSettings(accuracy: geo.LocationAccuracy.medium),
+    );

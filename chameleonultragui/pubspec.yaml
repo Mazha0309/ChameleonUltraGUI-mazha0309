@@ -72,6 +72,8 @@ dependencies:
   wakelock_plus: ^1.2.4
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.0.1
+  amap_flutter_map: ^3.0.0
+  amap_flutter_base: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -156,3 +158,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+
+dependency_overrides:
+  amap_flutter_base:
+    path: third_party/amap_flutter_base
+
+  amap_flutter_map:
+    path: third_party/amap_flutter_map

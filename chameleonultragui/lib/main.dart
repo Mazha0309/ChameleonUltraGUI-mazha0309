@@ -166,8 +166,12 @@ class _MainPageState extends State<MainPage> {
     if (!_geofenceServiceReady) {
       _geofenceServiceReady = true;
       final appState = context.read<ChameleonGUIState>();
-      GeofenceService.instance.attach(appState);
-      GeofenceService.instance.ensureStartedOnLaunch();
+      if (!(Platform.isWindows ||
+          Platform.isLinux ||
+          Platform.isMacOS)) {
+        GeofenceService.instance.attach(appState);
+        GeofenceService.instance.ensureStartedOnLaunch();
+      }
     }
   }
 
@@ -213,6 +217,29 @@ class _MainPageState extends State<MainPage> {
     } else {
       return Logger();
     }
+  }
+
+  List<_SidebarEntry> _sidebarDestinations(
+      ChameleonGUIState appState, BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final isDesktop =
+        Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+    return [
+      _SidebarEntry(0, Icons.home, loc.home),
+      _SidebarEntry(1, Icons.widgets, loc.slot_manager,
+          requiresConnection: true),
+      _SidebarEntry(2, Icons.auto_awesome_motion, loc.saved_cards),
+      _SidebarEntry(3, Icons.sensors, loc.read_card,
+          requiresConnection: true),
+      _SidebarEntry(4, Icons.system_update_alt, loc.write_card,
+          requiresConnection: true),
+      _SidebarEntry(5, Icons.handyman, loc.tools),
+      _SidebarEntry(6, Icons.settings, loc.settings),
+      if (!isDesktop)
+        const _SidebarEntry(8, Icons.location_on, '电子围栏 / Geofence'),
+      if (appState.devMode)
+        _SidebarEntry(7, Icons.bug_report, '🐞 ${loc.debug} 🐞'),
+    ];
   }
 
   @override
@@ -351,67 +378,20 @@ class _MainPageState extends State<MainPage> {
                             extended: appState.sharedPreferencesProvider
                                 .getSideBarExpanded(),
                             destinations: [
-                              // Sidebar Items
-                              NavigationRailDestination(
-                                icon: const Icon(Icons.home),
-                                label: Text(
-                                    AppLocalizations.of(context)!.home), // Home
-                              ),
-                              NavigationRailDestination(
-                                disabled: !appState.connector!.connected,
-                                icon: const Icon(Icons.widgets),
-                                label: Text(
-                                    AppLocalizations.of(context)!.slot_manager),
-                              ),
-                              NavigationRailDestination(
-                                icon: const Icon(Icons.auto_awesome_motion),
-                                label: Text(
-                                    AppLocalizations.of(context)!.saved_cards),
-                              ),
-                              NavigationRailDestination(
-                                disabled: !appState.connector!.connected,
-                                icon: const Icon(Icons.sensors),
-                                label: Text(
-                                    AppLocalizations.of(context)!.read_card),
-                              ),
-                              NavigationRailDestination(
-                                disabled: !appState.connector!.connected,
-                                icon: const Icon(Icons.system_update_alt),
-                                label: Text(
-                                    AppLocalizations.of(context)!.write_card),
-                              ),
-                              NavigationRailDestination(
-                                icon: const Icon(Icons.handyman),
-                                label:
-                                    Text(AppLocalizations.of(context)!.tools),
-                              ),
-                              NavigationRailDestination(
-                                icon: const Icon(Icons.settings),
-                                label: Text(
-                                    AppLocalizations.of(context)!.settings),
-                              ),
-                              NavigationRailDestination(
-                                icon: const Icon(Icons.location_on),
-                                label: const Text('电子围栏 / Geofence'),
-                              ),
-                              if (appState.devMode)
+                              // Sidebar Items (indices tracked via map below)
+                              for (final entry in _sidebarDestinations(appState, context))
                                 NavigationRailDestination(
-                                  icon: const Icon(Icons.bug_report),
-                                  label: Text(
-                                      '🐞 ${AppLocalizations.of(context)!.debug} 🐞'),
+                                  disabled: entry.requiresConnection &&
+                                      !appState.connector!.connected,
+                                  icon: Icon(entry.icon),
+                                  label: Text(entry.label),
                                 ),
                             ],
                             selectedIndex: selectedIndex,
                             onDestinationSelected: (value) {
-                              // The debug destination (index 7) is hidden when
-                              // devMode is off, which shifts the visible list
-                              // positions; map back to the real page index.
-                              var index = value;
-                              if (!appState.devMode && value >= 7) {
-                                index = value + 1;
-                              }
                               setState(() {
-                                selectedIndex = index;
+                                selectedIndex =
+                                    _sidebarDestinations(appState, context)[value].index;
                               });
                             },
                           ),
@@ -446,4 +426,14 @@ class BottomProgressBar extends StatelessWidget {
           )
         : const SizedBox();
   }
+}
+
+class _SidebarEntry {
+  final int index;
+  final IconData icon;
+  final String label;
+  final bool requiresConnection;
+
+  const _SidebarEntry(this.index, this.icon, this.label,
+      {this.requiresConnection = false});
 }

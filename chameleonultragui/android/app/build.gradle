@@ -68,4 +68,6 @@ flutter {
 
 dependencies {
     implementation "com.polidea.rxandroidble2:rxandroidble:1.17.2"
+    implementation 'com.amap.api:3dmap:8.1.0'
+    implementation 'com.amap.api:location:6.4.7'
 }
