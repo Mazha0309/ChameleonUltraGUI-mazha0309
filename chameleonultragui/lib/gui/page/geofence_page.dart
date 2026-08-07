@@ -109,6 +109,12 @@ class GeofencePageState extends State<GeofencePage> {
     setState(() => _fences.add(fence));
     _save();
     await GeofenceService.instance.refreshGeofences();
+    // First enabled fence: start the guard automatically so geofencing works
+    // without the user having to find the master switch.
+    if (!_guardEnabled && fence.enabled) {
+      setState(() => _guardEnabled = true);
+      await GeofenceService.instance.setGuardEnabled(true);
+    }
   }
 
   Future<void> _editFence(GeofenceConfig fence) async {
@@ -184,8 +190,8 @@ class GeofencePageState extends State<GeofencePage> {
       body: Column(
         children: [
           SwitchListTile(
-            title: const Text("常驻通知 / Guard (防杀)"),
-            subtitle: const Text("开启后后台常驻通知+定位检查，进圈自动切槽"),
+            title: const Text("围栏守护总开关 / Geofence Guard"),
+            subtitle: const Text("总开关：开启后启动后台定位检测(每2秒) + 常驻通知防杀，进出围栏自动切槽/恢复"),
             value: _guardEnabled,
             onChanged: _toggleGuard,
           ),

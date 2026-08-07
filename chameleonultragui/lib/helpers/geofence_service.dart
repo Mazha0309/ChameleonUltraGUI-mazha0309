@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:geolocator/geolocator.dart';
@@ -40,6 +41,8 @@ class GeofenceService {
   }
 
   void _log(String message) {
+    // Always visible in logcat regardless of the app's logger config.
+    debugPrint('[Geofence] $message');
     try {
       _appState?.log?.i('[Geofence] $message');
     } catch (_) {}
