@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/helpers/geofence.dart';
 import 'package:chameleonultragui/helpers/geofence_service.dart';
+import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/helpers/geo_convert.dart';
 
 /// AMap API key, injected at build time: flutter build apk --dart-define=AMAP_KEY=...
@@ -175,6 +176,7 @@ class GeofencePageState extends State<GeofencePage> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     final appState = context.watch<ChameleonGUIState>();
     final prefs = appState.sharedPreferencesProvider;
     _fences = prefs.getGeofences();
@@ -186,21 +188,21 @@ class GeofencePageState extends State<GeofencePage> {
     };
 
     return Scaffold(
-      appBar: AppBar(title: const Text("电子围栏 / Geofence")),
+      appBar: AppBar(title: Text(localizations.geofence)),
       body: Column(
         children: [
           SwitchListTile(
-            title: const Text("围栏守护总开关 / Geofence Guard"),
-            subtitle: const Text("总开关：开启后启动后台定位检测(每2秒) + 常驻通知防杀，进出围栏自动切槽/恢复"),
+            title: Text(localizations.geofence_guard),
+            subtitle: Text(localizations.geofence_guard_subtitle),
             value: _guardEnabled,
             onChanged: _toggleGuard,
           ),
           if (kAmapKey.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(8),
+            Padding(
+              padding: const EdgeInsets.all(8),
               child: Text(
-                "未配置高德 Key：flutter build apk --dart-define=AMAP_KEY=你的Key",
-                style: TextStyle(color: Colors.orange),
+                localizations.amap_key_missing,
+                style: const TextStyle(color: Colors.orange),
               ),
             ),
           Expanded(
@@ -257,18 +259,18 @@ class GeofencePageState extends State<GeofencePage> {
                   },
                 ),
                 if (_locating)
-                  const Positioned(
+                  Positioned(
                     top: 8,
                     left: 0,
                     right: 0,
                     child: Center(
                       child: Chip(
-                        avatar: SizedBox(
+                        avatar: const SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                        label: Text("定位中 / Locating..."),
+                        label: Text(localizations.locating),
                       ),
                     ),
                   ),
@@ -298,7 +300,7 @@ class GeofencePageState extends State<GeofencePage> {
                       const SizedBox(height: 8),
                       FloatingActionButton.small(
                         heroTag: 'centerAdd',
-                        tooltip: '以屏幕中心添加围栏 / Add at center',
+                        tooltip: localizations.add_at_center,
                         onPressed: () {
                           final center = _cameraCenter;
                           if (center != null) {
@@ -315,7 +317,7 @@ class GeofencePageState extends State<GeofencePage> {
           ),
           Expanded(
             child: _fences.isEmpty
-                ? const Center(child: Text("点击地图添加围栏 / Tap the map to add"))
+                ? Center(child: Text(localizations.tap_map_to_add))
                 : ListView(
                     children: [
                       for (final f in _fences)
@@ -382,20 +384,21 @@ class GeofenceEditDialogState extends State<GeofenceEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: Text(widget.existing == null ? "添加围栏 / Add" : "编辑围栏 / Edit"),
+      title: Text(widget.existing == null ? localizations.add_fence : localizations.edit_fence),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: "名称 / Name"),
+              decoration: InputDecoration(labelText: localizations.fence_name),
             ),
             const SizedBox(height: 10),
             Row(
               children: [
-                const Text("半径 / Radius:"),
+                Text(localizations.radius),
                 Expanded(
                   child: Slider(
                     min: 20,
@@ -412,7 +415,7 @@ class GeofenceEditDialogState extends State<GeofenceEditDialog> {
             const SizedBox(height: 10),
             Row(
               children: [
-                const Text("目标槽 / Target slot:"),
+                Text(localizations.target_slot),
                 const SizedBox(width: 10),
                 DropdownButton<int>(
                   value: _targetSlot,
@@ -420,7 +423,7 @@ class GeofenceEditDialogState extends State<GeofenceEditDialog> {
                     for (var i = 0; i < 16; i++)
                       DropdownMenuItem(
                         value: i,
-                        child: Text("${i + 1}${i >= 8 ? " (高半区)" : ""}"),
+                        child: Text(localizations.slot_label(i + 1) + (i >= 8 ? " " + localizations.high_half : "")),
                       ),
                   ],
                   onChanged: (v) => setState(() => _targetSlot = v ?? 0),
@@ -430,7 +433,7 @@ class GeofenceEditDialogState extends State<GeofenceEditDialog> {
             const SizedBox(height: 10),
             Row(
               children: [
-                const Text("启用 / Enabled:"),
+                Text(localizations.enabled),
                 Switch(
                   value: _enabled,
                   onChanged: (v) => setState(() => _enabled = v),
@@ -447,7 +450,7 @@ class GeofenceEditDialogState extends State<GeofenceEditDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text("取消 / Cancel"),
+          child: Text(localizations.cancel),
         ),
         TextButton(
           onPressed: () {
@@ -467,7 +470,7 @@ class GeofenceEditDialogState extends State<GeofenceEditDialog> {
               ),
             );
           },
-          child: const Text("保存 / Save"),
+          child: Text(localizations.save),
         ),
       ],
     );

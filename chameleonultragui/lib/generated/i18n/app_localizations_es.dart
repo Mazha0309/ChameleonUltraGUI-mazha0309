@@ -1940,4 +1940,81 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get sniff_device_required_hint =>
       'No device connected. Connect a Chameleon to capture, or load a saved file.';
+
+  @override
+  String get polling => 'Polling';
+
+  @override
+  String get auto_polling => 'Auto polling';
+
+  @override
+  String get interval_ms => 'Interval (ms):';
+
+  @override
+  String get soft_reboot => 'A+B long-press soft reboot';
+
+  @override
+  String get toggle_polling => 'Toggle polling';
+
+  @override
+  String get geofence => 'Geofence';
+
+  @override
+  String get geofence_guard => 'Geofence Guard';
+
+  @override
+  String get geofence_guard_subtitle =>
+      'Master switch: starts background location checks (every 2s) + persistent notification anti-kill; switches slot on fence enter/exit';
+
+  @override
+  String get add_fence => 'Add fence';
+
+  @override
+  String get edit_fence => 'Edit fence';
+
+  @override
+  String get fence_name => 'Name';
+
+  @override
+  String get radius => 'Radius:';
+
+  @override
+  String get target_slot => 'Target slot:';
+
+  @override
+  String get tap_map_to_add => 'Tap the map to add a fence';
+
+  @override
+  String get locating => 'Locating...';
+
+  @override
+  String get add_at_center => 'Add fence at screen center';
+
+  @override
+  String get amap_key_missing =>
+      'AMap key not configured: flutter build apk --dart-define=AMAP_KEY=yourKey';
+
+  @override
+  String get high_half => '(high half)';
+
+  @override
+  String m1_keys_saved(Object count) {
+    return 'M1 keys saved: $count/80';
+  }
+
+  @override
+  String get write_to_slot => 'Write to slot';
+
+  @override
+  String get select_target_slot => 'Select target slot';
+
+  @override
+  String written_to_slot(Object slot) {
+    return 'Written to slot $slot';
+  }
+
+  @override
+  String slot_label(Object index) {
+    return 'Slot $index';
+  }
 }

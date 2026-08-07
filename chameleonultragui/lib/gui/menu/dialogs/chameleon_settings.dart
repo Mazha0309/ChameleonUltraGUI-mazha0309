@@ -273,7 +273,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.backward,
                           localizations.clone_uid,
                           localizations.charge,
-                          "轮询开关",
+                          localizations.toggle_polling,
                           "进DFU"
                         ],
                         selectedValue: settings.aPress.value,
@@ -311,7 +311,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.backward,
                           localizations.clone_uid,
                           localizations.charge,
-                          "轮询开关",
+                          localizations.toggle_polling,
                           "进DFU"
                         ],
                         selectedValue: settings.bPress.value,
@@ -352,7 +352,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.backward,
                           localizations.clone_uid,
                           localizations.charge,
-                          "轮询开关",
+                          localizations.toggle_polling,
                           "进DFU"
                         ],
                         selectedValue: settings.aLongPress.value,
@@ -390,7 +390,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.backward,
                           localizations.clone_uid,
                           localizations.charge,
-                          "轮询开关",
+                          localizations.toggle_polling,
                           "进DFU"
                         ],
                         selectedValue: settings.bLongPress.value,
@@ -421,7 +421,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("A+B同时长按软重启 / Soft reboot"),
+                        Text(localizations.soft_reboot),
                         Switch(
                           value: abRebootEnable,
                           onChanged: (value) async {
@@ -433,12 +433,12 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    const Text("轮询 / Polling:"),
+                    Text(localizations.polling),
                     const SizedBox(height: 7),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("自动轮询 / Auto polling"),
+                        Text(localizations.auto_polling),
                         Switch(
                           value: pollingEnable,
                           onChanged: (value) async {
@@ -452,7 +452,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("间隔(ms) / Interval(ms):"),
+                        Text(localizations.interval_ms),
                         const SizedBox(width: 10),
                         DropdownButton<int>(
                           value: pollingInterval,

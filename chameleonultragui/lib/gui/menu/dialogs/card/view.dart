@@ -169,7 +169,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                 children: [
                   const SizedBox(height: 8),
                   Text(
-                    "M1 密钥: ${currentSavedCard.extraData.mifareClassicKeys.where((k) => k.length == 6).length}/80 扇区密钥已保存",
+                    localizations.m1_keys_saved(currentSavedCard.extraData.mifareClassicKeys.where((k) => k.length == 6).length),
                     style: const TextStyle(fontSize: 12),
                   ),
                   const SizedBox(height: 8),
@@ -248,7 +248,7 @@ class CardViewMenuState extends State<CardViewMenu> {
             const SizedBox(height: 12),
             ElevatedButton.icon(
               icon: const Icon(Icons.save_alt),
-              label: const Text("写入槽位 / Write to slot"),
+              label: Text(localizations.write_to_slot),
               onPressed: () async {
                 if (appState.connector == null ||
                     !appState.connector!.connected) {
@@ -257,7 +257,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                 final slot = await showDialog<int>(
                   context: context,
                   builder: (context) => SimpleDialog(
-                    title: const Text("选择目标槽位 / Target slot"),
+                    title: Text(localizations.select_target_slot),
                     children: [
                       for (int i = 0; i < 16; i++)
                         SimpleDialogOption(
@@ -272,7 +272,7 @@ class CardViewMenuState extends State<CardViewMenu> {
                 await writeCardToSlot(context, currentSavedCard, slot);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("已写入槽 ${slot + 1} / Written to slot ${slot + 1}")),
+                    SnackBar(content: Text(localizations.written_to_slot(slot + 1))),
                   );
                 }
               },

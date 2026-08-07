@@ -236,7 +236,7 @@ class _MainPageState extends State<MainPage> {
       _SidebarEntry(5, Icons.handyman, loc.tools),
       _SidebarEntry(6, Icons.settings, loc.settings),
       if (!isDesktop)
-        const _SidebarEntry(8, Icons.location_on, '电子围栏 / Geofence'),
+        _SidebarEntry(8, Icons.location_on, loc.geofence),
       if (appState.devMode)
         _SidebarEntry(7, Icons.bug_report, '🐞 ${loc.debug} 🐞'),
     ];

@@ -181,7 +181,7 @@ abstract class AppLocalizations {
   /// No description provided for @enabled.
   ///
   /// In en, this message translates to:
-  /// **'Enabled'**
+  /// **'Enabled:'**
   String get enabled;
 
   /// No description provided for @disabled.
@@ -3568,6 +3568,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No device connected. Connect a Chameleon to capture, or load a saved file.'**
   String get sniff_device_required_hint;
+
+  /// No description provided for @polling.
+  ///
+  /// In en, this message translates to:
+  /// **'Polling'**
+  String get polling;
+
+  /// No description provided for @auto_polling.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto polling'**
+  String get auto_polling;
+
+  /// No description provided for @interval_ms.
+  ///
+  /// In en, this message translates to:
+  /// **'Interval (ms):'**
+  String get interval_ms;
+
+  /// No description provided for @soft_reboot.
+  ///
+  /// In en, this message translates to:
+  /// **'A+B long-press soft reboot'**
+  String get soft_reboot;
+
+  /// No description provided for @toggle_polling.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle polling'**
+  String get toggle_polling;
+
+  /// No description provided for @geofence.
+  ///
+  /// In en, this message translates to:
+  /// **'Geofence'**
+  String get geofence;
+
+  /// No description provided for @geofence_guard.
+  ///
+  /// In en, this message translates to:
+  /// **'Geofence Guard'**
+  String get geofence_guard;
+
+  /// No description provided for @geofence_guard_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Master switch: starts background location checks (every 2s) + persistent notification anti-kill; switches slot on fence enter/exit'**
+  String get geofence_guard_subtitle;
+
+  /// No description provided for @add_fence.
+  ///
+  /// In en, this message translates to:
+  /// **'Add fence'**
+  String get add_fence;
+
+  /// No description provided for @edit_fence.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit fence'**
+  String get edit_fence;
+
+  /// No description provided for @fence_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get fence_name;
+
+  /// No description provided for @radius.
+  ///
+  /// In en, this message translates to:
+  /// **'Radius:'**
+  String get radius;
+
+  /// No description provided for @target_slot.
+  ///
+  /// In en, this message translates to:
+  /// **'Target slot:'**
+  String get target_slot;
+
+  /// No description provided for @tap_map_to_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the map to add a fence'**
+  String get tap_map_to_add;
+
+  /// No description provided for @locating.
+  ///
+  /// In en, this message translates to:
+  /// **'Locating...'**
+  String get locating;
+
+  /// No description provided for @add_at_center.
+  ///
+  /// In en, this message translates to:
+  /// **'Add fence at screen center'**
+  String get add_at_center;
+
+  /// No description provided for @amap_key_missing.
+  ///
+  /// In en, this message translates to:
+  /// **'AMap key not configured: flutter build apk --dart-define=AMAP_KEY=yourKey'**
+  String get amap_key_missing;
+
+  /// No description provided for @high_half.
+  ///
+  /// In en, this message translates to:
+  /// **'(high half)'**
+  String get high_half;
+
+  /// No description provided for @m1_keys_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'M1 keys saved: {count}/80'**
+  String m1_keys_saved(Object count);
+
+  /// No description provided for @write_to_slot.
+  ///
+  /// In en, this message translates to:
+  /// **'Write to slot'**
+  String get write_to_slot;
+
+  /// No description provided for @select_target_slot.
+  ///
+  /// In en, this message translates to:
+  /// **'Select target slot'**
+  String get select_target_slot;
+
+  /// No description provided for @written_to_slot.
+  ///
+  /// In en, this message translates to:
+  /// **'Written to slot {slot}'**
+  String written_to_slot(Object slot);
+
+  /// No description provided for @slot_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Slot {index}'**
+  String slot_label(Object index);
 }
 
 class _AppLocalizationsDelegate

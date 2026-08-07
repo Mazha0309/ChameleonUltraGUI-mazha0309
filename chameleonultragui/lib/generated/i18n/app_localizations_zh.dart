@@ -27,7 +27,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get yes => '是';
 
   @override
-  String get enabled => '已启用';
+  String get enabled => '启用:';
 
   @override
   String get disabled => '已禁用';
@@ -1868,6 +1868,83 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sniff_device_required_hint => '未连接任何设备。连接一个Chameleon以抓取或加载保存文件。';
+
+  @override
+  String get polling => '轮询';
+
+  @override
+  String get auto_polling => '自动轮询';
+
+  @override
+  String get interval_ms => '间隔(ms):';
+
+  @override
+  String get soft_reboot => 'A+B同时长按软重启';
+
+  @override
+  String get toggle_polling => '轮询开关';
+
+  @override
+  String get geofence => '电子围栏';
+
+  @override
+  String get geofence_guard => '围栏守护总开关';
+
+  @override
+  String get geofence_guard_subtitle =>
+      '总开关：开启后启动后台定位检测(每2秒) + 常驻通知防杀，进出围栏自动切槽/恢复';
+
+  @override
+  String get add_fence => '添加围栏';
+
+  @override
+  String get edit_fence => '编辑围栏';
+
+  @override
+  String get fence_name => '名称';
+
+  @override
+  String get radius => '半径:';
+
+  @override
+  String get target_slot => '目标槽:';
+
+  @override
+  String get tap_map_to_add => '点击地图添加围栏';
+
+  @override
+  String get locating => '定位中...';
+
+  @override
+  String get add_at_center => '以屏幕中心添加围栏';
+
+  @override
+  String get amap_key_missing =>
+      '未配置高德Key：flutter build apk --dart-define=AMAP_KEY=你的Key';
+
+  @override
+  String get high_half => '(高半区)';
+
+  @override
+  String m1_keys_saved(Object count) {
+    return 'M1 密钥已保存: $count/80';
+  }
+
+  @override
+  String get write_to_slot => '写入槽位';
+
+  @override
+  String get select_target_slot => '选择目标槽位';
+
+  @override
+  String written_to_slot(Object slot) {
+    return '已写入槽 $slot';
+  }
+
+  @override
+  String slot_label(Object index) {
+    return '槽 $index';
+  }
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).

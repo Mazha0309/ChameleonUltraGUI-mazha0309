@@ -88,7 +88,7 @@ Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
 
   try {
     final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
+            "https://api.github.com/repos/Mazha0309/ChameleonUltra-mazha0309/releases")))
         .body
         .toString());
 
@@ -98,15 +98,15 @@ Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
     }
 
     for (var release in releases) {
-      if (release["prerelease"]) {
-        for (var file in release["assets"]) {
-          if (file["name"] ==
-              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip") {
-            content =
-                await http.readBytes(Uri.parse(file["browser_download_url"]));
-            break;
-          }
+      for (var file in release["assets"]) {
+        if (file["name"] == "ultra-dfu-app.zip") {
+          content =
+              await http.readBytes(Uri.parse(file["browser_download_url"]));
+          break;
         }
+      }
+      if (content.isNotEmpty) {
+        break;
       }
     }
   } catch (_) {}
@@ -124,7 +124,7 @@ Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
 
   try {
     final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts?per_page=100")))
+            "https://api.github.com/repos/Mazha0309/ChameleonUltra-mazha0309/actions/artifacts?per_page=100")))
         .body
         .toString());
 
@@ -139,7 +139,7 @@ Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
           artifact["workflow_run"]["head_branch"] == "main" &&
           artifact["workflow_run"]["head_repository_id"] == 581338100) {
         content = await http.readBytes(Uri.parse(
-            "https://nightly.link/RfidResearchGroup/ChameleonUltra/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}"));
+            "https://nightly.link/Mazha0309/ChameleonUltra-mazha0309/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}"));
         break;
       }
     }
@@ -157,7 +157,7 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
 
   try {
     final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/actions/artifacts?per_page=100")))
+            "https://api.github.com/repos/Mazha0309/ChameleonUltra-mazha0309/actions/artifacts?per_page=100")))
         .body
         .toString());
 
@@ -178,7 +178,7 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
 
   try {
     final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/releases")))
+            "https://api.github.com/repos/Mazha0309/ChameleonUltra-mazha0309/releases")))
         .body
         .toString());
 
@@ -209,7 +209,7 @@ Future<String> resolveCommit(String commitHash) async {
     return commitHash; // v2.0.0-1-gXXXXXX-dirty
   } else if ('-'.allMatches(commitHash).isEmpty) {
     final tags = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/RfidResearchGroup/ChameleonUltra/tags")))
+            "https://api.github.com/repos/Mazha0309/ChameleonUltra-mazha0309/tags")))
         .body
         .toString());
     for (var tag in tags) {
