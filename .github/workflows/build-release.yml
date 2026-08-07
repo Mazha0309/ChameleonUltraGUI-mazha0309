@@ -16,6 +16,20 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+      - name: Setup release signing
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > chameleonultragui/android/upload-keystore.jks
+          cat > chameleonultragui/android/key.properties <<EOF
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
       - name: Build APK
         working-directory: chameleonultragui
         run: |
