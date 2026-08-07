@@ -54,6 +54,11 @@ dependencies:
   http: ^1.1.0
   archive: ^4.0.1
   flutter_reactive_ble: ^5.4.0
+  flutter_map: ^8.2.2
+  latlong2: ^0.9.1
+  geolocator: ^14.0.2
+  flutter_background_service: ^5.0.10
+  flutter_background_service_android: ^6.3.1
   permission_handler: ^12.0.0+1
   protobuf: ^6.0.0
   collection: ^1.17.1

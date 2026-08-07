@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:chameleonultragui/helpers/colors.dart' as colors;
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/geofence.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -683,5 +684,60 @@ class SharedPreferencesProvider extends ChangeNotifier {
 
   void setAutoConnectFirstFoundDevice(bool value) {
     _sharedPreferences.setBool('auto_connect_first_found', value);
+  }
+
+
+  List<GeofenceConfig> getGeofences() {
+    return geofencesFromJsonString(
+        _sharedPreferences.getString('geofences'));
+  }
+
+  void setGeofences(List<GeofenceConfig> fences) {
+    _sharedPreferences.setString('geofences', geofencesToJsonString(fences));
+    notifyListeners();
+  }
+
+  bool getGeofenceGuardEnabled() {
+    return _sharedPreferences.getBool('geofence_guard') ?? false;
+  }
+
+  void setGeofenceGuardEnabled(bool enabled) {
+    _sharedPreferences.setBool('geofence_guard', enabled);
+    notifyListeners();
+  }
+
+  Map<String, int> getGeofenceOriginalSlots() {
+    final raw = _sharedPreferences.getString('geofence_original_slots');
+    if (raw == null || raw.isEmpty) {
+      return {};
+    }
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      return map.map((k, v) => MapEntry(k, v as int));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  void setGeofenceOriginalSlot(String fenceId, int slot) {
+    final map = getGeofenceOriginalSlots();
+    map[fenceId] = slot;
+    _sharedPreferences.setString(
+        'geofence_original_slots', jsonEncode(map));
+  }
+
+  void clearGeofenceOriginalSlot(String fenceId) {
+    final map = getGeofenceOriginalSlots();
+    map.remove(fenceId);
+    _sharedPreferences.setString(
+        'geofence_original_slots', jsonEncode(map));
+  }
+
+  List<String> getGeofenceEnteredIds() {
+    return _sharedPreferences.getStringList('geofence_entered_ids') ?? [];
+  }
+
+  void setGeofenceEnteredIds(List<String> ids) {
+    _sharedPreferences.setStringList('geofence_entered_ids', ids);
   }
 }

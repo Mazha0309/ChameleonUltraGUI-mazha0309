@@ -19,6 +19,8 @@ import 'connector/serial_native.dart';
 import 'package:chameleonultragui/gui/page/home.dart';
 import 'package:chameleonultragui/gui/page/saved_cards.dart';
 import 'package:chameleonultragui/gui/page/settings.dart';
+import 'package:chameleonultragui/gui/page/geofence_page.dart';
+import 'package:chameleonultragui/helpers/geofence_service.dart';
 import 'package:chameleonultragui/gui/page/connect.dart';
 import 'package:chameleonultragui/gui/page/debug.dart';
 import 'package:chameleonultragui/gui/page/slot_manager.dart';
@@ -149,11 +151,24 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   var selectedIndex = 0;
 
+  bool _geofenceServiceReady = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance
         .addPostFrameCallback((_) => updateNavigationRailWidth(context));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_geofenceServiceReady) {
+      _geofenceServiceReady = true;
+      final appState = context.read<ChameleonGUIState>();
+      GeofenceService.instance.attach(appState);
+      GeofenceService.instance.ensureStartedOnLaunch();
+    }
   }
 
   @override
@@ -226,7 +241,8 @@ class _MainPageState extends State<MainPage> {
         selectedIndex != 2 &&
         selectedIndex != 5 &&
         selectedIndex != 6 &&
-        selectedIndex != 7) {
+        selectedIndex != 7 &&
+        selectedIndex != 8) {
       // If not connected, and not on home, tools, settings or dev page, go to home page
       selectedIndex = 0;
     }
@@ -268,6 +284,9 @@ class _MainPageState extends State<MainPage> {
         break;
       case 7:
         page = const DebugPage();
+        break;
+      case 8:
+        page = const GeofencePage();
         break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');
@@ -370,6 +389,10 @@ class _MainPageState extends State<MainPage> {
                                 icon: const Icon(Icons.settings),
                                 label: Text(
                                     AppLocalizations.of(context)!.settings),
+                              ),
+                              NavigationRailDestination(
+                                icon: const Icon(Icons.location_on),
+                                label: const Text('电子围栏 / Geofence'),
                               ),
                               if (appState.devMode)
                                 NavigationRailDestination(
