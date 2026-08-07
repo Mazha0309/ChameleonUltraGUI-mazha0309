@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -21,7 +23,9 @@ class GeofencePageState extends State<GeofencePage> {
   List<GeofenceConfig> _fences = [];
   bool _guardEnabled = false;
   LatLng? _center;
+  LatLng? _myPosition;
   bool _locating = true;
+  Timer? _positionTimer;
 
   @override
   void initState() {
@@ -49,7 +53,8 @@ class GeofencePageState extends State<GeofencePage> {
           locationSettings:
               const LocationSettings(accuracy: LocationAccuracy.medium),
         );
-        fallback = LatLng(pos.latitude, pos.longitude);
+        _myPosition = LatLng(pos.latitude, pos.longitude);
+        fallback = _myPosition!;
       }
     } catch (_) {}
     if (mounted) {
@@ -57,7 +62,34 @@ class GeofencePageState extends State<GeofencePage> {
         _center = fallback;
         _locating = false;
       });
+      _startPositionTimer();
     }
+  }
+
+  void _startPositionTimer() {
+    _positionTimer?.cancel();
+    _positionTimer = Timer.periodic(const Duration(milliseconds: 500), (_) async {
+      try {
+        if (await Geolocator.isLocationServiceEnabled() &&
+            await Geolocator.checkPermission() != LocationPermission.denied) {
+          final pos = await Geolocator.getCurrentPosition(
+            locationSettings:
+                const LocationSettings(accuracy: LocationAccuracy.medium),
+          );
+          if (mounted) {
+            setState(() {
+              _myPosition = LatLng(pos.latitude, pos.longitude);
+            });
+          }
+        }
+      } catch (_) {}
+    });
+  }
+
+  @override
+  void dispose() {
+    _positionTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _toggleGuard(bool value) async {
@@ -169,6 +201,20 @@ class GeofencePageState extends State<GeofencePage> {
                           ),
                           MarkerLayer(
                             markers: [
+                              if (_myPosition != null)
+                                Marker(
+                                  point: _myPosition!,
+                                  width: 18,
+                                  height: 18,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: Colors.white, width: 2),
+                                    ),
+                                  ),
+                                ),
                               for (final f in _fences)
                                 Marker(
                                   point: LatLng(f.latitude, f.longitude),
@@ -194,8 +240,10 @@ class GeofencePageState extends State<GeofencePage> {
                         child: FloatingActionButton.small(
                           onPressed: () async {
                             final pos = await Geolocator.getCurrentPosition();
-                            _mapController.move(
-                                LatLng(pos.latitude, pos.longitude), 16);
+                            setState(() {
+                              _myPosition = LatLng(pos.latitude, pos.longitude);
+                            });
+                            _mapController.move(_myPosition!, 16);
                           },
                           child: const Icon(Icons.my_location),
                         ),
