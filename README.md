@@ -106,39 +106,68 @@ Crypto Currencies if your into that jam (Although open collective is preferred):
 
 ## Mazha0309 修改版
 
-基于官方 ChameleonUltraGUI（Flutter）的修改版，**GPL-3.0 许可证，与官方保持一致**。Android 包名改为 `io.chameleon.ultra.mazha0309`（可与官方版共存安装）。
+基于官方 ChameleonUltraGUI（Flutter）的修改版，**GPL-3.0 许可证，与官方保持一致**。
+Android 包名改为 `io.chameleon.ultra.mazha0309`（可与官方版共存安装）。
+配套固件：`RfidResearchGroup/ChameleonUltra` 的 mazha0309 分支（16 卡槽 + 轮询，见固件仓库 README）。
 
-### 功能修改
+### 功能列表
 
-- **16 卡槽管理**：槽位管理页 8 → 16 格，9~16 号带紫色"高半区"角标；首页槽位指示灯双排 8+8；可用卡槽统计 X/16
-- **轮询面板**：设备设置对话框内新增"轮询"区——自动轮询开关 + 间隔下拉（100~1000ms，选择立即生效）
-- **按键配置**：每个按键位新增选项"轮询开关"和"进DFU"；新增"A+B 同时长按软重启"开关
-- **电子围栏**（Android/iOS）：
-  - 高德地图（AMap SDK）页面：点击/长按/屏幕中心按钮添加围栏，半径滑块 + 目标槽（16 槽）设置
-  - **围栏守护总开关**：开启后启动后台定位检测（每 2 秒）+ 常驻通知防杀，进出围栏自动连接设备切槽/恢复原槽（已在目标槽时跳过）
-  - 首次添加围栏自动开启守护；GPS 坐标自动做 WGS-84 → GCJ-02 转换（地图显示与距离判断均一致）
-  - 桌面端（Windows/Linux/macOS）自动隐藏围栏页（高德无桌面 SDK）
-- **调试**：围栏服务日志以 `[Geofence]` 前缀输出到 logcat，便于排障
+| 功能 | 说明 |
+|---|---|
+| **16 卡槽管理** | 槽位管理页 8 → 16 格，9~16 号带紫色"高半区"角标；首页槽位指示灯双排 8+8；可用卡槽统计 X/16 |
+| **轮询面板** | 设备设置 → 轮询区：自动轮询开关 + 间隔下拉（100~1000ms，选择立即生效） |
+| **按键配置** | 每个按键位新增"轮询开关"、"进DFU"选项；新增"A+B 同时长按软重启"开关 |
+| **电子围栏** | 见下方专节 |
+| **LF Jablotron 支持** | 补全 Jablotron 协议（官方 GUI 遗漏）：自动识别扫描、卡包保存、槽位模拟写入 |
+| **M1 每扇区密钥保存** | 读取 M1 时把恢复得到的每扇区密钥（80 个 A/B）随卡存入卡包；卡详情显示密钥数量，导出字典优先用存储密钥 |
+| **卡包一键写槽位** | 卡详情"写入槽位"按钮 → 16 槽选择器 → LF/M1/UL 全类型一键写入设备槽位 |
+| **系统语言跟随** | 默认跟随系统语言（原版默认英文） |
 
-### 读卡增强
+### 电子围栏（Android/iOS）
 
-- **LF 自动识别补全 Jablotron 协议**：读卡自动扫描新增 Jablotron（固件命令 3019），支持读取、卡包保存、槽位模拟（含 Jablotron 模拟器 ID 写入）
-- **M1 每扇区密钥保存**：读取 M1 卡时把试钥/恢复得到的每扇区密钥（80 个，A/B）随卡存入卡包；卡详情显示密钥保存数量，导出字典时优先使用存储密钥（比从 dump 提取更完整，含未读扇区）
-- **卡包一键写槽位**：卡详情新增"写入槽位"按钮，16 槽选择器，一键把卡包卡片（LF/M1/UL 全类型）写入设备指定槽位，自动设置卡类型/ID/数据块/名称并保存
+**页面**：侧边栏"电子围栏"（桌面端自动隐藏，高德无桌面 SDK）
+- 高德地图（AMap SDK）：点击地图 / 长按 / "以屏幕中心添加"按钮 三种方式添加围栏
+- 围栏设置：名称、半径滑块（20~2000m）、目标槽（16 槽，高半区标注）、启用开关
+- 当前位置蓝点实时定位（500ms 刷新）
+
+**触发逻辑**：
+- **围栏守护总开关**（页面顶部）：开启后启动后台定位检测（每 2 秒）+ 前台常驻通知（防杀）
+- **进圈**：自动连接设备 → 记住当前槽 → 切到目标槽（已在目标槽则跳过）
+- **出圈**：自动切回进圈前槽位
+- 添加第一个围栏时自动开启守护；定位权限需授权（后台触发建议"始终允许"）
+
+**调试**：服务日志以 `[Geofence]` 前缀输出到 logcat：
+
+```
+[Geofence] check: pos=(30.25442,120.16453) fences=1 entered={}
+[Geofence] fence "围栏 1" dist=33m inside=true entered=false
+[Geofence] ENTER fence "围栏 1" -> slot 9
+[Geofence] switched to slot 9
+```
+
+**坐标系**：GPS（WGS-84）自动转换为高德地图坐标（GCJ-02），地图显示与围栏距离判断均一致。
 
 ### 高德地图 Key
 
-Key 绑定 Android 包名 + 签名指纹，**不进仓库**，构建时注入：
+Key 绑定 Android 包名 + 签名指纹（SHA1），**不进仓库**，构建时注入：
 
 ```bash
 flutter build apk --release --dart-define=AMAP_KEY=你的高德Key
 ```
 
 未注入 Key 时围栏页显示配置提示，不影响其他功能。
+申请地址：https://console.amap.com/ （应用管理 → 创建应用 → Android 平台 → 填 SHA1 + 包名）
 
 ### third_party 说明
 
-高德官方 Flutter 插件（`amap_flutter_map` / `amap_flutter_base`，MIT 许可证，LICENSE 文件已保留）年久失修，与现代 Flutter 不兼容，本仓库在 `third_party/` 下打了兼容性补丁（移除已废弃的 `@required`/`hashValues`/v1 插件 API/`FlutterMain`，补充 AGP namespace），通过 `dependency_overrides` 使用本地补丁版。
+高德官方 Flutter 插件（`amap_flutter_map` / `amap_flutter_base`，MIT 许可证，LICENSE 文件已保留）
+年久失修，与现代 Flutter 不兼容，本仓库在 `third_party/` 下打了兼容性补丁并通过
+`dependency_overrides` 使用本地补丁版。补丁内容：
+
+- 移除已废弃的 `@required` 注解（Flutter 3.24+ 已删除）
+- `hashValues`（被 Flutter 彻底移除）→ 基于 `Object.hash` 的等价实现
+- 移除 v1 插件 API（`PluginRegistry.Registrar`）与 `FlutterMain`（均已删除）
+- 补充 AGP `namespace` 与 SDK 版本
 
 ### 构建
 
@@ -148,3 +177,12 @@ flutter pub get
 flutter build apk --release --dart-define=AMAP_KEY=你的高德Key   # Android
 flutter build linux --release                                    # Linux 桌面
 ```
+
+Android 构建需 Java 17（`flutter config --jdk-dir=/usr/lib/jvm/java-17-openjdk`）。
+
+### 使用流程建议
+
+1. 刷配套固件（16 槽 + 轮询），配合本 GUI 使用
+2. 卡包：读取/导入卡片 → 卡详情"写入槽位"一键上卡
+3. 轮询：设备设置开轮询 + 选间隔，贴读卡器自动切卡
+4. 围栏：小区门口/公司设围栏 + 目标槽，到点自动切卡
