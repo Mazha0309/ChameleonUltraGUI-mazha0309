@@ -311,7 +311,7 @@ class HomePageState extends State<HomePage> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    Text("${localizations.used_slots}: $usedSlots/8",
+                    Text("${localizations.used_slots}: $usedSlots/16",
                         style: TextStyle(
                           fontSize: min(
                             MediaQuery.of(context).size.width / 35,

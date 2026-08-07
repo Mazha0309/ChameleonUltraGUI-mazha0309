@@ -107,12 +107,11 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       List<int> blockChunk = [];
       int lastSend = 0;
 
-      for (
-        var blockOffset = 0;
-        blockOffset <
-            mfClassicGetBlockCount(chameleonTagTypeGetMfClassicType(card.tag));
-        blockOffset++
-      ) {
+      for (var blockOffset = 0;
+          blockOffset <
+              mfClassicGetBlockCount(
+                  chameleonTagTypeGetMfClassicType(card.tag));
+          blockOffset++) {
         if ((card.data.length > blockOffset &&
                 card.data[blockOffset].isEmpty) ||
             blockChunk.length >= 128) {
@@ -308,11 +307,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       );
       await appState.communicator!.setMf1AntiCollision(cardData);
 
-      for (
-        var page = 0;
-        page < mfUltralightGetPagesCount(card.tag) && card.data.length > page;
-        page++
-      ) {
+      for (var page = 0;
+          page < mfUltralightGetPagesCount(card.tag) && card.data.length > page;
+          page++) {
         await appState.communicator!.mf0EmulatorWritePages(
           page,
           card.data[page],
@@ -408,9 +405,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                   return Expanded(
                     child: AlignedGridView.count(
                       padding: const EdgeInsets.all(20),
-                      crossAxisCount: MediaQuery.of(context).size.width >= 700
-                          ? 2
-                          : 1,
+                      crossAxisCount: 2,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                       itemCount: 16,
@@ -428,14 +423,12 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                               cardSelectDialog(context);
                             },
                             style: ButtonStyle(
-                              shape:
-                                  WidgetStateProperty.all<
-                                    RoundedRectangleBorder
-                                  >(
-                                    RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(18.0),
-                                    ),
-                                  ),
+                              shape: WidgetStateProperty.all<
+                                  RoundedRectangleBorder>(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18.0),
+                                ),
+                              ),
                             ),
                             child: Padding(
                               padding: const EdgeInsets.only(

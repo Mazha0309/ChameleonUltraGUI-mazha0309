@@ -1,8 +1,8 @@
-import 'dart:typed_data';
 import 'dart:convert';
 import 'package:chameleonultragui/helpers/colors.dart' as colors;
 import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -551,11 +551,15 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   String getLocaleString() {
-    return _sharedPreferences.getString("locale") ?? "en";
+    return _sharedPreferences.getString("locale") ?? "system";
   }
 
   Locale getLocale() {
     final localeId = getLocaleString();
+    if (localeId == "system") {
+      // Follow the system language by default.
+      return PlatformDispatcher.instance.locale;
+    }
     Locale locale;
     if (localeId.contains("-")) {
       final [lcode, ccode] = localeId.toString().split("-");
@@ -571,7 +575,7 @@ class SharedPreferencesProvider extends ChangeNotifier {
   }
 
   void clearLocale() {
-    _sharedPreferences.setString('locale', "en");
+    _sharedPreferences.setString('locale', "system");
     notifyListeners();
   }
 
