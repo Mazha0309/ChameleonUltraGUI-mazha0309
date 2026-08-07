@@ -87,7 +87,19 @@ class SlotChangerState extends State<SlotChanger> {
                   onPressed: () async {},
                   icon: const Icon(Icons.arrow_back),
                 ),
-                ...presold,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: presold.sublist(0, 8),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: presold.sublist(8, 16),
+                    ),
+                  ],
+                ),
                 IconButton(
                   onPressed: () async {},
                   icon: const Icon(Icons.arrow_forward),
@@ -115,10 +127,22 @@ class SlotChangerState extends State<SlotChanger> {
                   },
                   icon: const Icon(Icons.arrow_back),
                 ),
-                ...slotIcons,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: slotIcons.sublist(0, 8),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: slotIcons.sublist(8, 16),
+                    ),
+                  ],
+                ),
                 IconButton(
                   onPressed: () async {
-                    if (selectedSlot < 8) {
+                    if (selectedSlot < 16) {
                       await appState.communicator!.activateSlot(selectedSlot);
                       setState(() {});
                       appState.changesMade();
