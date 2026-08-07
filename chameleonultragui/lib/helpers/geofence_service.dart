@@ -39,14 +39,23 @@ class GeofenceService {
     }
   }
 
+  void _log(String message) {
+    try {
+      _appState?.log?.i('[Geofence] $message');
+    } catch (_) {}
+  }
+
   /// 常驻通知开关。
   Future<void> setGuardEnabled(bool enabled) async {
     _prefs.setGeofenceGuardEnabled(enabled);
     if (enabled) {
+      _log('guard enabled');
+      _prefs.setGeofenceEnteredIds([]); // fresh monitoring session
       await _ensurePermission();
       await _startGuardService();
       _startPeriodicCheck();
     } else {
+      _log('guard disabled');
       _stopPeriodicCheck();
       FlutterBackgroundService().invoke('stopService');
     }
@@ -136,6 +145,8 @@ class GeofenceService {
     // Fences are stored in GCJ-02 (map coordinates); convert GPS to match.
     final (myLat, myLng) =
         GeoConvert.wgs84ToGcj02(position.latitude, position.longitude);
+    _log('check: pos=(${myLat.toStringAsFixed(5)},${myLng.toStringAsFixed(5)}) '
+        'fences=${fences.length} entered=${enteredIds}');
 
     for (final fence in fences) {
       final distance = Geolocator.distanceBetween(
@@ -145,14 +156,18 @@ class GeofenceService {
         fence.longitude,
       );
       final inside = distance <= fence.radiusMeters;
+      _log('fence "${fence.name}" dist=${distance.toStringAsFixed(0)}m '
+          'inside=$inside entered=${enteredIds.contains(fence.id)}');
 
       if (inside && !enteredIds.contains(fence.id)) {
         enteredIds.add(fence.id);
         prefs.setGeofenceEnteredIds(enteredIds.toList());
+        _log('ENTER fence "${fence.name}" -> slot ${fence.targetSlot + 1}');
         await _onEnter(appState, fence);
       } else if (!inside && enteredIds.contains(fence.id)) {
         enteredIds.remove(fence.id);
         prefs.setGeofenceEnteredIds(enteredIds.toList());
+        _log('EXIT fence "${fence.name}" -> restore');
         await _onExit(appState, fence);
       }
     }
@@ -167,6 +182,9 @@ class GeofenceService {
       // Skip the switch when the device is already on the target slot.
       if (originalSlot != fence.targetSlot) {
         await communicator.activateSlot(fence.targetSlot);
+        _log('switched to slot ${fence.targetSlot + 1}');
+      } else {
+        _log('already on target slot ${fence.targetSlot + 1}, skip');
       }
     });
   }
@@ -179,6 +197,9 @@ class GeofenceService {
       final currentSlot = await communicator.getActiveSlot();
       if (currentSlot != originalSlot) {
         await communicator.activateSlot(originalSlot);
+        _log('restored slot ${originalSlot + 1}');
+      } else {
+        _log('already on original slot, skip');
       }
     });
     prefs.clearGeofenceOriginalSlot(fence.id);
