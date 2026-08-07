@@ -54,6 +54,7 @@ set_target_properties(recovery PROPERTIES
 )
 
 target_compile_definitions(recovery PUBLIC DART_SHARED_LIB)
+add_definitions(-D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
 
 if (WIN32)
   # Workaround Flutter bug for Windows

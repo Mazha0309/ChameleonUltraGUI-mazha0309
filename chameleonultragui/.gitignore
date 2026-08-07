@@ -58,4 +58,5 @@ android/fastlane/report.xml
 
 # Translation
 untranslated_messages.json
-lib/generated/i18n/
+lib/generated/i18n/key.properties
+upload-keystore.jks

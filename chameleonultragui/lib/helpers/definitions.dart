@@ -254,8 +254,8 @@ enum ButtonConfig {
   cycleBackward(2),
   cloneUID(3),
   chargeStatus(4),
-  togglePolling(5),
-  enterDfuMode(6);
+  togglePolling(6),
+  enterDfuMode(7);
 
   const ButtonConfig(this.value);
   final int value;
