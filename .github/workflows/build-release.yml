@@ -90,12 +90,7 @@ jobs:
           cp -r linux/x64/release/bundle/* appimage/
           cd appimage
           cp ../linux/x64/release/bundle/data/flutter_assets/assets/logo.png appicon.png
-          pip install --quiet pillow
-          python3 -c "
-          from PIL import Image
-          img = Image.open('appicon.png').convert('RGBA')
-          img = img.resize((256, 256), Image.LANCZOS)
-          img.save('appicon256.png')"
+          convert appicon.png -resize 256x256 appicon256.png
           cat > chameleonultragui.desktop <<'DEOF'
           [Desktop Entry]
           Name=Chameleon Ultra GUI (mazha0309)
