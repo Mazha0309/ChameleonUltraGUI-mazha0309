@@ -1,0 +1,117 @@
+name: Build & Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Build APK
+        working-directory: chameleonultragui
+        run: |
+          flutter pub get
+          flutter build apk --release --dart-define=AMAP_KEY=${{ secrets.AMAP_KEY }}
+      - name: Upload APK to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: chameleonultragui/build/app/outputs/flutter-apk/app-release.apk
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Build Windows
+        working-directory: chameleonultragui
+        run: |
+          flutter pub get
+          flutter build windows --release --dart-define=AMAP_KEY=${{ secrets.AMAP_KEY }}
+      - name: Package zip
+        shell: pwsh
+        run: |
+          cd chameleonultragui
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath ../chameleonultragui-windows.zip
+      - name: Upload Windows zip to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: chameleonultragui-windows.zip
+
+  linux-appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev ninja-build file
+      - name: Build Linux
+        working-directory: chameleonultragui
+        run: |
+          flutter pub get
+          flutter build linux --release --dart-define=AMAP_KEY=${{ secrets.AMAP_KEY }}
+      - name: Build AppImage
+        working-directory: chameleonultragui/build
+        run: |
+          curl -sL -o linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          curl -sL -o linuxdeploy-plugin-gtk.sh https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh
+          chmod +x linuxdeploy linuxdeploy-plugin-gtk.sh
+          curl -sL -o appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+          mkdir -p appimage
+          cp -r linux/x64/release/bundle/* appimage/
+          cd appimage
+          cp ../linux/x64/release/bundle/data/flutter_assets/assets/logo.png appicon.png
+          python3 -c "
+          from PIL import Image
+          img = Image.open('appicon.png').convert('RGBA')
+          img = img.resize((256, 256), Image.LANCZOS)
+          img.save('appicon256.png')"
+          cat > chameleonultragui.desktop <<'DEOF'
+          [Desktop Entry]
+          Name=Chameleon Ultra GUI (mazha0309)
+          Comment=Chameleon Ultra GUI - 16 slot + polling + geofence
+          Exec=chameleonultragui
+          Icon=chameleonultragui
+          Terminal=false
+          Type=Application
+          Categories=Utility;
+          StartupNotify=true
+          DEOF
+          export DEPLOY_GTK_VERSION=3
+          ../linuxdeploy --appdir=AppDir --executable=./chameleonultragui --icon-file=./appicon256.png --desktop-file=./chameleonultragui.desktop --plugin gtk
+          cp AppDir/usr/share/applications/chameleonultragui.desktop AppDir/usr/share/applications/ChameleonUltraGUI-mazha0309-x86_64.desktop
+          cp AppDir/usr/share/icons/hicolor/256x256/apps/appicon256.png AppDir/usr/share/icons/hicolor/256x256/apps/chameleonultragui.png
+          cp ./chameleonultragui.desktop AppDir/
+          cp ./appicon256.png AppDir/chameleonultragui.png
+          cp ../linux/x64/release/bundle/lib AppDir/usr/bin/lib -r
+          cp ../linux/x64/release/bundle/data AppDir/usr/bin/data -r
+          cat > AppDir/AppRun <<'AEOF'
+          #!/bin/sh
+          SELF=$(readlink -f "$0")
+          HERE=${SELF%/*}
+          export PATH="$HERE/usr/bin:$PATH"
+          export LD_LIBRARY_PATH="$HERE/usr/bin/lib:$HERE/usr/lib:${LD_LIBRARY_PATH:-}"
+          export GSETTINGS_SCHEMA_DIR="$HERE/usr/share/glib-2.0/schemas:${GSETTINGS_SCHEMA_DIR:-}"
+          exec "$HERE/usr/bin/chameleonultragui" "$@"
+          AEOF
+          chmod +x AppDir/AppRun
+          ../appimagetool --no-appstream AppDir ../ChameleonUltraGUI-mazha0309-x86_64.AppImage
+      - name: Upload AppImage to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: chameleonultragui/build/ChameleonUltraGUI-mazha0309-x86_64.AppImage
