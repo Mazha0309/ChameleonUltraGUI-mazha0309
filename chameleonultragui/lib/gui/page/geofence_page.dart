@@ -165,9 +165,7 @@ class GeofencePageState extends State<GeofencePage> {
             onChanged: _toggleGuard,
           ),
           Expanded(
-            child: _locating
-                ? const Center(child: CircularProgressIndicator())
-                : Stack(
+            child: Stack(
                     children: [
                       FlutterMap(
                         mapController: _mapController,
@@ -234,6 +232,22 @@ class GeofencePageState extends State<GeofencePage> {
                           ),
                         ],
                       ),
+                      if (_locating)
+                        const Positioned(
+                          top: 8,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Chip(
+                              avatar: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              label: Text("定位中 / Locating..."),
+                            ),
+                          ),
+                        ),
                       Positioned(
                         right: 8,
                         bottom: 8,
