@@ -403,8 +403,15 @@ class _MainPageState extends State<MainPage> {
                             ],
                             selectedIndex: selectedIndex,
                             onDestinationSelected: (value) {
+                              // The debug destination (index 7) is hidden when
+                              // devMode is off, which shifts the visible list
+                              // positions; map back to the real page index.
+                              var index = value;
+                              if (!appState.devMode && value >= 7) {
+                                index = value + 1;
+                              }
                               setState(() {
-                                selectedIndex = value;
+                                selectedIndex = index;
                               });
                             },
                           ),
