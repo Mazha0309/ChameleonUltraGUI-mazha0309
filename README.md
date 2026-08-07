@@ -101,3 +101,44 @@ Crypto Currencies if your into that jam (Although open collective is preferred):
     <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=GameTec-live/ChameleonUltraGUI&type=Timeline" />
   </picture>
 </a>
+
+---
+
+## Mazha0309 修改版
+
+基于官方 ChameleonUltraGUI（Flutter）的修改版，**GPL-3.0 许可证，与官方保持一致**。Android 包名改为 `io.chameleon.ultra.mazha0309`（可与官方版共存安装）。
+
+### 功能修改
+
+- **16 卡槽管理**：槽位管理页 8 → 16 格，9~16 号带紫色"高半区"角标；首页槽位指示灯双排 8+8；可用卡槽统计 X/16
+- **轮询面板**：设备设置对话框内新增"轮询"区——自动轮询开关 + 间隔下拉（100~1000ms，选择立即生效）
+- **按键配置**：每个按键位新增选项"轮询开关"和"进DFU"；新增"A+B 同时长按软重启"开关
+- **电子围栏**（Android/iOS）：
+  - 高德地图（AMap SDK）页面：点击/长按/屏幕中心按钮添加围栏，半径滑块 + 目标槽（16 槽）设置
+  - **围栏守护总开关**：开启后启动后台定位检测（每 2 秒）+ 常驻通知防杀，进出围栏自动连接设备切槽/恢复原槽（已在目标槽时跳过）
+  - 首次添加围栏自动开启守护；GPS 坐标自动做 WGS-84 → GCJ-02 转换（地图显示与距离判断均一致）
+  - 桌面端（Windows/Linux/macOS）自动隐藏围栏页（高德无桌面 SDK）
+- **调试**：围栏服务日志以 `[Geofence]` 前缀输出到 logcat，便于排障
+
+### 高德地图 Key
+
+Key 绑定 Android 包名 + 签名指纹，**不进仓库**，构建时注入：
+
+```bash
+flutter build apk --release --dart-define=AMAP_KEY=你的高德Key
+```
+
+未注入 Key 时围栏页显示配置提示，不影响其他功能。
+
+### third_party 说明
+
+高德官方 Flutter 插件（`amap_flutter_map` / `amap_flutter_base`，MIT 许可证，LICENSE 文件已保留）年久失修，与现代 Flutter 不兼容，本仓库在 `third_party/` 下打了兼容性补丁（移除已废弃的 `@required`/`hashValues`/v1 插件 API/`FlutterMain`，补充 AGP namespace），通过 `dependency_overrides` 使用本地补丁版。
+
+### 构建
+
+```bash
+cd chameleonultragui
+flutter pub get
+flutter build apk --release --dart-define=AMAP_KEY=你的高德Key   # Android
+flutter build linux --release                                    # Linux 桌面
+```
