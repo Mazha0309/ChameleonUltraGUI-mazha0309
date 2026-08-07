@@ -149,7 +149,7 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  var selectedIndex = 0;
+  var _pageIndex = 0;
 
   bool _geofenceServiceReady = false;
 
@@ -264,17 +264,17 @@ class _MainPageState extends State<MainPage> {
 
     Widget page; // Set Page
     if (!appState.connector!.connected &&
-        selectedIndex != 0 &&
-        selectedIndex != 2 &&
-        selectedIndex != 5 &&
-        selectedIndex != 6 &&
-        selectedIndex != 7 &&
-        selectedIndex != 8) {
+        _pageIndex != 0 &&
+        _pageIndex != 2 &&
+        _pageIndex != 5 &&
+        _pageIndex != 6 &&
+        _pageIndex != 7 &&
+        _pageIndex != 8) {
       // If not connected, and not on home, tools, settings or dev page, go to home page
-      selectedIndex = 0;
+      _pageIndex = 0;
     }
 
-    switch (selectedIndex) {
+    switch (_pageIndex) {
       // Sidebar Navigation
       case 0:
         if (appState.connector!.pendingConnection) {
@@ -316,7 +316,7 @@ class _MainPageState extends State<MainPage> {
         page = const GeofencePage();
         break;
       default:
-        throw UnimplementedError('no widget for $selectedIndex');
+        throw UnimplementedError('no widget for $_pageIndex');
     }
 
     try {
@@ -387,10 +387,11 @@ class _MainPageState extends State<MainPage> {
                                   label: Text(entry.label),
                                 ),
                             ],
-                            selectedIndex: selectedIndex,
+                            selectedIndex: _sidebarDestinations(appState, context)
+                                .indexWhere((e) => e.index == _pageIndex),
                             onDestinationSelected: (value) {
                               setState(() {
-                                selectedIndex =
+                                _pageIndex =
                                     _sidebarDestinations(appState, context)[value].index;
                               });
                             },
