@@ -147,6 +147,8 @@ class GeofencePageState extends State<GeofencePage> {
                         children: [
                           TileLayer(
                             urlTemplate:
+                                'https://webrd0{1-4}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
+                            fallbackUrl:
                                 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                             userAgentPackageName:
                                 'io.chameleon.ultra.mazha0309',
@@ -157,6 +159,7 @@ class GeofencePageState extends State<GeofencePage> {
                                 if (f.enabled)
                                   CircleMarker(
                                     point: LatLng(f.latitude, f.longitude),
+                                    useRadiusInMeter: true,
                                     radius: f.radiusMeters,
                                     color: Colors.blue.withValues(alpha: 0.2),
                                     borderColor: Colors.blue,

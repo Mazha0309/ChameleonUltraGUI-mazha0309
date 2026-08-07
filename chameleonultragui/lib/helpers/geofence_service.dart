@@ -21,6 +21,7 @@ class GeofenceService {
 
   ChameleonGUIState? _appState;
   Timer? _checkTimer;
+  bool _serviceConfigured = false;
 
   SharedPreferencesProvider get _prefs {
     return _appState!.sharedPreferencesProvider;
@@ -59,6 +60,11 @@ class GeofenceService {
 
   Future<void> _startGuardService() async {
     final service = FlutterBackgroundService();
+    if (_serviceConfigured) {
+      service.startService();
+      return;
+    }
+    _serviceConfigured = true;
     await service.configure(
       androidConfiguration: AndroidConfiguration(
         onStart: (serviceInstance) async {
