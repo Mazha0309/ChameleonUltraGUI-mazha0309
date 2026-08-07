@@ -2,6 +2,10 @@
 cmake_minimum_required(VERSION 3.14)
 project(chameleonultragui LANGUAGES CXX)
 
+# Newer MSVC (VS 18+) turns the deprecated <experimental/coroutine> usage of
+# permission_handler_windows into a hard error; silence it for all targets.
+add_definitions(-D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "chameleonultragui")
