@@ -44,6 +44,7 @@ android {
 
     buildTypes {
         release {
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             if (keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']).exists() : false) {
                 println "Info: upload-keystore.jks found. Signing for release."
                 signingConfig = signingConfigs.release
