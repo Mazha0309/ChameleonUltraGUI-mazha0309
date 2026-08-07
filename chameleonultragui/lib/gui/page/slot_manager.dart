@@ -405,7 +405,8 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                   return Expanded(
                     child: AlignedGridView.count(
                       padding: const EdgeInsets.all(20),
-                      crossAxisCount: 2,
+                      crossAxisCount:
+                          MediaQuery.of(context).size.width >= 700 ? 2 : 1,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
                       itemCount: 16,
