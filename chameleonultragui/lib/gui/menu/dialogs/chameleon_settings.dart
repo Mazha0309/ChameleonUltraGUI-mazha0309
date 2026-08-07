@@ -271,7 +271,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.backward,
                           localizations.clone_uid,
                           localizations.charge,
-                          "轮询开关"
+                          "轮询开关",
+                          "进DFU"
                         ],
                         selectedValue: settings.aPress.value,
                         onChange: (int index) async {
@@ -286,6 +287,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             mode = ButtonConfig.chargeStatus;
                           } else if (index == 5) {
                             mode = ButtonConfig.togglePolling;
+                          } else if (index == 6) {
+                            mode = ButtonConfig.enterDfuMode;
                           }
 
                           await appState.communicator!
@@ -306,7 +309,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.backward,
                           localizations.clone_uid,
                           localizations.charge,
-                          "轮询开关"
+                          "轮询开关",
+                          "进DFU"
                         ],
                         selectedValue: settings.bPress.value,
                         onChange: (int index) async {
@@ -321,6 +325,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             mode = ButtonConfig.chargeStatus;
                           } else if (index == 5) {
                             mode = ButtonConfig.togglePolling;
+                          } else if (index == 6) {
+                            mode = ButtonConfig.enterDfuMode;
                           }
 
                           await appState.communicator!
@@ -344,7 +350,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.backward,
                           localizations.clone_uid,
                           localizations.charge,
-                          "轮询开关"
+                          "轮询开关",
+                          "进DFU"
                         ],
                         selectedValue: settings.aLongPress.value,
                         onChange: (int index) async {
@@ -359,6 +366,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             mode = ButtonConfig.chargeStatus;
                           } else if (index == 5) {
                             mode = ButtonConfig.togglePolling;
+                          } else if (index == 6) {
+                            mode = ButtonConfig.enterDfuMode;
                           }
 
                           await appState.communicator!
@@ -379,7 +388,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.backward,
                           localizations.clone_uid,
                           localizations.charge,
-                          "轮询开关"
+                          "轮询开关",
+                          "进DFU"
                         ],
                         selectedValue: settings.bLongPress.value,
                         onChange: (int index) async {
@@ -394,6 +404,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             mode = ButtonConfig.chargeStatus;
                           } else if (index == 5) {
                             mode = ButtonConfig.togglePolling;
+                          } else if (index == 6) {
+                            mode = ButtonConfig.enterDfuMode;
                           }
 
                           await appState.communicator!
