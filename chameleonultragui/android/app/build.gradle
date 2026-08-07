@@ -37,7 +37,7 @@ android {
        release {
            keyAlias keystoreProperties['keyAlias']
            keyPassword keystoreProperties['keyPassword']
-           storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+           storeFile (keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null) ?: (file('../upload-keystore.jks').exists() ? file('../upload-keystore.jks') : null)
            storePassword keystoreProperties['storePassword']
        }
     }
