@@ -22,12 +22,37 @@ class ChameleonSettings extends StatefulWidget {
 
 class ChameleonSettingsState extends State<ChameleonSettings> {
   late final Future<DeviceSettings> _settingsFuture;
+  static const List<int> pollingIntervalOptions = [
+    100, 200, 300, 400, 500, 600, 700, 800, 900, 1000
+  ];
+  bool pollingEnable = false;
+  int pollingInterval = 500;
+  bool pollingLoaded = false;
 
   @override
   void initState() {
     super.initState();
     _settingsFuture = getSettingsData();
+    loadPollingConfig();
   }
+
+  Future<void> loadPollingConfig() async {
+    var appState = context.read<ChameleonGUIState>();
+    if (appState.communicator == null || pollingLoaded) {
+      return;
+    }
+    try {
+      pollingEnable = await appState.communicator!.getPollingEnable();
+      pollingInterval = await appState.communicator!.getPollingInterval();
+      pollingLoaded = true;
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (_) {
+      // device might be unresponsive; keep defaults
+    }
+  }
+
 
   Future<DeviceSettings> getSettingsData() async {
     var appState = context.read<ChameleonGUIState>();
@@ -245,7 +270,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.forward,
                           localizations.backward,
                           localizations.clone_uid,
-                          localizations.charge
+                          localizations.charge,
+                          "轮询开关"
                         ],
                         selectedValue: settings.aPress.value,
                         onChange: (int index) async {
@@ -258,6 +284,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             mode = ButtonConfig.cloneUID;
                           } else if (index == 4) {
                             mode = ButtonConfig.chargeStatus;
+                          } else if (index == 5) {
+                            mode = ButtonConfig.togglePolling;
                           }
 
                           await appState.communicator!
@@ -277,7 +305,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.forward,
                           localizations.backward,
                           localizations.clone_uid,
-                          localizations.charge
+                          localizations.charge,
+                          "轮询开关"
                         ],
                         selectedValue: settings.bPress.value,
                         onChange: (int index) async {
@@ -290,6 +319,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             mode = ButtonConfig.cloneUID;
                           } else if (index == 4) {
                             mode = ButtonConfig.chargeStatus;
+                          } else if (index == 5) {
+                            mode = ButtonConfig.togglePolling;
                           }
 
                           await appState.communicator!
@@ -312,7 +343,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.forward,
                           localizations.backward,
                           localizations.clone_uid,
-                          localizations.charge
+                          localizations.charge,
+                          "轮询开关"
                         ],
                         selectedValue: settings.aLongPress.value,
                         onChange: (int index) async {
@@ -325,6 +357,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             mode = ButtonConfig.cloneUID;
                           } else if (index == 4) {
                             mode = ButtonConfig.chargeStatus;
+                          } else if (index == 5) {
+                            mode = ButtonConfig.togglePolling;
                           }
 
                           await appState.communicator!
@@ -344,7 +378,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.forward,
                           localizations.backward,
                           localizations.clone_uid,
-                          localizations.charge
+                          localizations.charge,
+                          "轮询开关"
                         ],
                         selectedValue: settings.bLongPress.value,
                         onChange: (int index) async {
@@ -357,6 +392,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             mode = ButtonConfig.cloneUID;
                           } else if (index == 4) {
                             mode = ButtonConfig.chargeStatus;
+                          } else if (index == 5) {
+                            mode = ButtonConfig.togglePolling;
                           }
 
                           await appState.communicator!
@@ -366,6 +403,50 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           setState(() {});
                           appState.changesMade();
                         }),
+                    const SizedBox(height: 10),
+                    const Text("轮询 / Polling:"),
+                    const SizedBox(height: 7),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("自动轮询 / Auto polling"),
+                        Switch(
+                          value: pollingEnable,
+                          onChanged: (value) async {
+                            setState(() => pollingEnable = value);
+                            await appState.communicator!
+                                .setPollingEnable(value);
+                          },
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("间隔(ms) / Interval(ms):"),
+                        const SizedBox(width: 10),
+                        DropdownButton<int>(
+                          value: pollingInterval,
+                          items: [
+                            ...pollingIntervalOptions.map((v) =>
+                                DropdownMenuItem(
+                                    value: v, child: Text("$v"))),
+                            if (!pollingIntervalOptions.contains(pollingInterval))
+                              DropdownMenuItem(
+                                  value: pollingInterval,
+                                  child: Text("$pollingInterval")),
+                          ],
+                          onChanged: (value) async {
+                            if (value == null) return;
+                            setState(() => pollingInterval = value);
+                            await appState.communicator!
+                                .setPollingInterval(value);
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        const Text("(ms)"),
+                      ],
+                    ),
                     const SizedBox(height: 10),
                     const Text("BLE:"),
                     const SizedBox(height: 10),

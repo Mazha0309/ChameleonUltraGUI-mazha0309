@@ -355,6 +355,8 @@ ButtonConfig getButtonConfigType(int value) {
     return ButtonConfig.cloneUID;
   } else if (value == 4) {
     return ButtonConfig.chargeStatus;
+  } else if (value == 5) {
+    return ButtonConfig.togglePolling;
   } else {
     return ButtonConfig.disable;
   }

@@ -35,35 +35,13 @@ class SettingsMainPage extends StatefulWidget {
 }
 
 class SettingsMainPageState extends State<SettingsMainPage> {
-  bool pollingEnable = false;
-  int pollingInterval = 500;
-  final TextEditingController pollingIntervalController = TextEditingController(
-    text: "500",
-  );
-  bool pollingLoaded = false;
-
   @override
   void initState() {
     super.initState();
   }
 
-  Future<void> loadPollingConfig() async {
-    var appState = context.read<ChameleonGUIState>();
-    if (appState.communicator == null || pollingLoaded) {
-      return;
-    }
-    try {
-      pollingEnable = await appState.communicator!.getPollingEnable();
-      pollingInterval = await appState.communicator!.getPollingInterval();
-      pollingIntervalController.text = "$pollingInterval";
-      pollingLoaded = true;
-    } catch (_) {
-      // device might be unresponsive; keep defaults
-    }
-  }
-
   Future<(String, List<Map<String, String>>, PackageInfo)>
-  getFutureData() async {
+      getFutureData() async {
     return (
       await fetchOCnames(),
       await fetchContributors(),
@@ -93,10 +71,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
   Widget build(BuildContext context) {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
-
-    if (appState.communicator != null) {
-      loadPollingConfig();
-    }
 
     return Scaffold(
       appBar: AppBar(title: Text(localizations.settings)),
@@ -159,9 +133,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   localizations.light,
                   localizations.dark,
                 ],
-                selectedValue: appState.sharedPreferencesProvider
-                    .getTheme()
-                    .index,
+                selectedValue:
+                    appState.sharedPreferencesProvider.getTheme().index,
                 onChange: (int index) async {
                   appState.sharedPreferencesProvider.setTheme(
                     ThemeMode.values[index],
@@ -229,8 +202,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ),
                   const SizedBox(width: 5),
                   Switch(
-                    value: appState.sharedPreferencesProvider
-                        .getAutoScanEnabled(),
+                    value:
+                        appState.sharedPreferencesProvider.getAutoScanEnabled(),
                     onChanged: (value) async {
                       appState.sharedPreferencesProvider.setAutoScanEnabled(
                         value,
@@ -270,8 +243,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ),
                   const SizedBox(width: 5),
                   Switch(
-                    value: appState.sharedPreferencesProvider
-                        .getConfirmDelete(),
+                    value:
+                        appState.sharedPreferencesProvider.getConfirmDelete(),
                     onChanged: (value) async {
                       appState.sharedPreferencesProvider.setConfirmDelete(
                         value,
@@ -294,7 +267,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       content: Text(
                         AppLocalizations.of(
                           context,
-                        )!.choose_export_method_description,
+                        )!
+                            .choose_export_method_description,
                       ),
                       actions: <Widget>[
                         TextButton(
@@ -306,8 +280,7 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                             String string = appState.sharedPreferencesProvider
                                 .dumpSettingsToJson();
 
-                            Map<String, int> settings =
-                                await showDialog(
+                            Map<String, int> settings = await showDialog(
                                   context: context,
                                   builder: (BuildContext context) {
                                     return const QRCodeSettings();
@@ -389,7 +362,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       content: Text(
                         AppLocalizations.of(
                           context,
-                        )!.import_settings_description,
+                        )!
+                            .import_settings_description,
                       ),
                       actions: <Widget>[
                         TextButton(
@@ -408,7 +382,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                   content: Text(
                                     AppLocalizations.of(
                                       context,
-                                    )!.qr_code_import_not_supported_description,
+                                    )!
+                                        .qr_code_import_not_supported_description,
                                   ),
                                   actions: <Widget>[
                                     TextButton(
@@ -481,7 +456,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     content: Center(
                       child: FutureBuilder(
                         future: getFutureData(),
-                        builder: (BuildContext context, AsyncSnapshot snapshot) {
+                        builder:
+                            (BuildContext context, AsyncSnapshot snapshot) {
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
                             return const Center(
@@ -675,9 +651,9 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                         onPressed: () {
                           appState.sharedPreferencesProvider
                               .setEmulatedChameleon(
-                                !appState.sharedPreferencesProvider
-                                    .isEmulatedChameleon(),
-                              );
+                            !appState.sharedPreferencesProvider
+                                .isEmulatedChameleon(),
+                          );
                           appState.connector = null;
                           appState.changesMade();
                           Navigator.pop(context);
@@ -726,54 +702,6 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   "${appState.sharedPreferencesProvider.isDebugMode() ? localizations.deactivate : localizations.activate} ${localizations.debug_mode.toLowerCase()}",
                 ),
               ),
-              if (appState.communicator != null) ...[
-                const SizedBox(height: 20),
-                const Divider(),
-                Text(
-                  "轮询 / Polling",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text("自动轮询 / Auto polling"),
-                    Switch(
-                      value: pollingEnable,
-                      onChanged: (value) async {
-                        setState(() => pollingEnable = value);
-                        await appState.communicator!.setPollingEnable(value);
-                      },
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text("轮询间隔(ms) / Interval(ms):"),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      width: 90,
-                      child: TextField(
-                        controller: pollingIntervalController,
-                        keyboardType: TextInputType.number,
-                        onSubmitted: (value) async {
-                          var ms = int.tryParse(value) ?? 500;
-                          if (ms < 100) ms = 100;
-                          if (ms > 5000) ms = 5000;
-                          setState(() {
-                            pollingInterval = ms;
-                            pollingIntervalController.text = "$ms";
-                          });
-                          await appState.communicator!.setPollingInterval(ms);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text("(100-5000)"),
-                  ],
-                ),
-              ],
             ],
           ),
         ),
