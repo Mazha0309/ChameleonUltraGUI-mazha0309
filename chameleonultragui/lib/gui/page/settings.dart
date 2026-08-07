@@ -35,17 +35,39 @@ class SettingsMainPage extends StatefulWidget {
 }
 
 class SettingsMainPageState extends State<SettingsMainPage> {
+  bool pollingEnable = false;
+  int pollingInterval = 500;
+  final TextEditingController pollingIntervalController = TextEditingController(
+    text: "500",
+  );
+  bool pollingLoaded = false;
+
   @override
   void initState() {
     super.initState();
   }
 
+  Future<void> loadPollingConfig() async {
+    var appState = context.read<ChameleonGUIState>();
+    if (appState.communicator == null || pollingLoaded) {
+      return;
+    }
+    try {
+      pollingEnable = await appState.communicator!.getPollingEnable();
+      pollingInterval = await appState.communicator!.getPollingInterval();
+      pollingIntervalController.text = "$pollingInterval";
+      pollingLoaded = true;
+    } catch (_) {
+      // device might be unresponsive; keep defaults
+    }
+  }
+
   Future<(String, List<Map<String, String>>, PackageInfo)>
-      getFutureData() async {
+  getFutureData() async {
     return (
       await fetchOCnames(),
       await fetchContributors(),
-      await PackageInfo.fromPlatform()
+      await PackageInfo.fromPlatform(),
     );
   }
 
@@ -72,49 +94,59 @@ class SettingsMainPageState extends State<SettingsMainPage> {
     var appState = context.watch<ChameleonGUIState>();
     var localizations = AppLocalizations.of(context)!;
 
+    if (appState.communicator != null) {
+      loadPollingConfig();
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(localizations.settings),
-      ),
+      appBar: AppBar(title: Text(localizations.settings)),
       body: SingleChildScrollView(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 10),
-              Text(localizations.sidebar_expansion,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                localizations.sidebar_expansion,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 5),
               ToggleButtonsWrapper(
-                  items: [
-                    localizations.expand,
-                    localizations.auto,
-                    localizations.retract
-                  ],
-                  selectedValue: appState.sharedPreferencesProvider
-                      .getSideBarExpandedIndex(),
-                  onChange: (int index) async {
-                    if (index == 0) {
-                      appState.sharedPreferencesProvider
-                          .setSideBarExpanded(true);
-                      appState.sharedPreferencesProvider
-                          .setSideBarAutoExpansion(false);
-                    } else if (index == 2) {
-                      appState.sharedPreferencesProvider
-                          .setSideBarExpanded(false);
-                      appState.sharedPreferencesProvider
-                          .setSideBarAutoExpansion(false);
-                    } else {
-                      appState.sharedPreferencesProvider
-                          .setSideBarAutoExpansion(true);
-                    }
-                    appState.sharedPreferencesProvider
-                        .setSideBarExpandedIndex(index);
-                    appState.changesMade();
+                items: [
+                  localizations.expand,
+                  localizations.auto,
+                  localizations.retract,
+                ],
+                selectedValue: appState.sharedPreferencesProvider
+                    .getSideBarExpandedIndex(),
+                onChange: (int index) async {
+                  if (index == 0) {
+                    appState.sharedPreferencesProvider.setSideBarExpanded(true);
+                    appState.sharedPreferencesProvider.setSideBarAutoExpansion(
+                      false,
+                    );
+                  } else if (index == 2) {
+                    appState.sharedPreferencesProvider.setSideBarExpanded(
+                      false,
+                    );
+                    appState.sharedPreferencesProvider.setSideBarAutoExpansion(
+                      false,
+                    );
+                  } else {
+                    appState.sharedPreferencesProvider.setSideBarAutoExpansion(
+                      true,
+                    );
+                  }
+                  appState.sharedPreferencesProvider.setSideBarExpandedIndex(
+                    index,
+                  );
+                  appState.changesMade();
 
-                    WidgetsBinding.instance.addPostFrameCallback(
-                        (_) => updateNavigationRailWidth(context));
-                  }),
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => updateNavigationRailWidth(context),
+                  );
+                },
+              ),
               const SizedBox(height: 10),
               Text(
                 localizations.theme,
@@ -122,18 +154,21 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               ),
               const SizedBox(height: 5),
               ToggleButtonsWrapper(
-                  items: [
-                    localizations.system,
-                    localizations.light,
-                    localizations.dark
-                  ],
-                  selectedValue:
-                      appState.sharedPreferencesProvider.getTheme().index,
-                  onChange: (int index) async {
-                    appState.sharedPreferencesProvider
-                        .setTheme(ThemeMode.values[index]);
-                    appState.changesMade();
-                  }),
+                items: [
+                  localizations.system,
+                  localizations.light,
+                  localizations.dark,
+                ],
+                selectedValue: appState.sharedPreferencesProvider
+                    .getTheme()
+                    .index,
+                onChange: (int index) async {
+                  appState.sharedPreferencesProvider.setTheme(
+                    ThemeMode.values[index],
+                  );
+                  appState.changesMade();
+                },
+              ),
               const SizedBox(height: 10),
               Text(
                 localizations.color_scheme,
@@ -149,38 +184,14 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   appState.changesMade();
                 },
                 items: [
-                  DropdownMenuItem(
-                    value: 0,
-                    child: Text(localizations.def),
-                  ),
-                  DropdownMenuItem(
-                    value: 1,
-                    child: Text(localizations.purple),
-                  ),
-                  DropdownMenuItem(
-                    value: 2,
-                    child: Text(localizations.blue),
-                  ),
-                  DropdownMenuItem(
-                    value: 3,
-                    child: Text(localizations.green),
-                  ),
-                  DropdownMenuItem(
-                    value: 4,
-                    child: Text(localizations.indigo),
-                  ),
-                  DropdownMenuItem(
-                    value: 5,
-                    child: Text(localizations.lime),
-                  ),
-                  DropdownMenuItem(
-                    value: 6,
-                    child: Text(localizations.red),
-                  ),
-                  DropdownMenuItem(
-                    value: 7,
-                    child: Text(localizations.yellow),
-                  ),
+                  DropdownMenuItem(value: 0, child: Text(localizations.def)),
+                  DropdownMenuItem(value: 1, child: Text(localizations.purple)),
+                  DropdownMenuItem(value: 2, child: Text(localizations.blue)),
+                  DropdownMenuItem(value: 3, child: Text(localizations.green)),
+                  DropdownMenuItem(value: 4, child: Text(localizations.indigo)),
+                  DropdownMenuItem(value: 5, child: Text(localizations.lime)),
+                  DropdownMenuItem(value: 6, child: Text(localizations.red)),
+                  DropdownMenuItem(value: 7, child: Text(localizations.yellow)),
                 ],
               ),
               const SizedBox(height: 10),
@@ -194,15 +205,17 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                 child: DropdownButton(
                   value: appState.sharedPreferencesProvider.getLocaleString(),
                   onChanged: (value) {
-                    appState.sharedPreferencesProvider
-                        .setLocale(Locale(value ?? 'en'));
+                    appState.sharedPreferencesProvider.setLocale(
+                      Locale(value ?? 'en'),
+                    );
                     appState.changesMade();
                   },
                   items: AppLocalizations.supportedLocales.map((locale) {
                     final localeLocalizations = lookupAppLocalizations(locale);
                     return DropdownMenuItem(
-                        value: locale.toLanguageTag(),
-                        child: Text(localeLocalizations.language_name));
+                      value: locale.toLanguageTag(),
+                      child: Text(localeLocalizations.language_name),
+                    );
                   }).toList(),
                 ),
               ),
@@ -216,11 +229,12 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ),
                   const SizedBox(width: 5),
                   Switch(
-                    value:
-                        appState.sharedPreferencesProvider.getAutoScanEnabled(),
+                    value: appState.sharedPreferencesProvider
+                        .getAutoScanEnabled(),
                     onChanged: (value) async {
-                      appState.sharedPreferencesProvider
-                          .setAutoScanEnabled(value);
+                      appState.sharedPreferencesProvider.setAutoScanEnabled(
+                        value,
+                      );
                       appState.changesMade();
                     },
                   ),
@@ -256,11 +270,12 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ),
                   const SizedBox(width: 5),
                   Switch(
-                    value:
-                        appState.sharedPreferencesProvider.getConfirmDelete(),
+                    value: appState.sharedPreferencesProvider
+                        .getConfirmDelete(),
                     onChanged: (value) async {
-                      appState.sharedPreferencesProvider
-                          .setConfirmDelete(value);
+                      appState.sharedPreferencesProvider.setConfirmDelete(
+                        value,
+                      );
                       appState.changesMade();
                     },
                   ),
@@ -270,92 +285,96 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: TextButton(
-                    onPressed: () => showDialog<String>(
-                          context: context,
-                          builder: (BuildContext context) => AlertDialog(
-                            title: Text(AppLocalizations.of(context)!
-                                .choose_export_method),
-                            content: Text(AppLocalizations.of(context)!
-                                .choose_export_method_description),
-                            actions: <Widget>[
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text(localizations.cancel),
-                              ),
-                              TextButton(
-                                onPressed: () async {
-                                  String string = appState
-                                      .sharedPreferencesProvider
-                                      .dumpSettingsToJson();
-
-                                  Map<String, int> settings = await showDialog(
-                                          context: context,
-                                          builder: (BuildContext context) {
-                                            return const QRCodeSettings();
-                                          }) ??
-                                      {};
-
-                                  if (settings.isEmpty) {
-                                    return;
-                                  }
-
-                                  List<String> qrChunks =
-                                      splitStringIntoQrChunks(string,
-                                          settings["splitSize"]!); //2048
-
-                                  // Generate Header Info
-                                  Map<String, dynamic> headerData = {
-                                    "Info": "Chameleon Ultra GUI Settings",
-                                    "chunks": qrChunks.length,
-                                    "sha256": sha256
-                                        .convert(
-                                            const Utf8Encoder().convert(string))
-                                        .toString(),
-                                  };
-                                  qrChunks.insert(0, jsonEncode(headerData));
-
-                                  if (context.mounted) {
-                                    await showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) =>
-                                          QrCodeViewer(
-                                              qrChunks: qrChunks,
-                                              errorCorrection:
-                                                  settings["errorCorrection"]!),
-                                    );
-                                  }
-
-                                  appState.changesMade();
-                                  if (context.mounted) {
-                                    Navigator.pop(context);
-                                  }
-                                },
-                                child: Text(localizations.qr_code),
-                              ),
-                              TextButton(
-                                onPressed: () async {
-                                  await FilePicker.saveFile(
-                                    dialogTitle:
-                                        '${localizations.output_file}:',
-                                    fileName: 'ChameleonUltraGUISettings.json',
-                                    bytes: const Utf8Encoder().convert(appState
-                                        .sharedPreferencesProvider
-                                        .dumpSettingsToJson()),
-                                  );
-                                },
-                                child: Text(
-                                    AppLocalizations.of(context)!.json_file),
-                              ),
-                            ],
-                          ),
+                  onPressed: () => showDialog<String>(
+                    context: context,
+                    builder: (BuildContext context) => AlertDialog(
+                      title: Text(
+                        AppLocalizations.of(context)!.choose_export_method,
+                      ),
+                      content: Text(
+                        AppLocalizations.of(
+                          context,
+                        )!.choose_export_method_description,
+                      ),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(localizations.cancel),
                         ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(AppLocalizations.of(context)!.export_settings),
-                        const Icon(Icons.upload)
+                        TextButton(
+                          onPressed: () async {
+                            String string = appState.sharedPreferencesProvider
+                                .dumpSettingsToJson();
+
+                            Map<String, int> settings =
+                                await showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return const QRCodeSettings();
+                                  },
+                                ) ??
+                                {};
+
+                            if (settings.isEmpty) {
+                              return;
+                            }
+
+                            List<String> qrChunks = splitStringIntoQrChunks(
+                              string,
+                              settings["splitSize"]!,
+                            ); //2048
+
+                            // Generate Header Info
+                            Map<String, dynamic> headerData = {
+                              "Info": "Chameleon Ultra GUI Settings",
+                              "chunks": qrChunks.length,
+                              "sha256": sha256
+                                  .convert(const Utf8Encoder().convert(string))
+                                  .toString(),
+                            };
+                            qrChunks.insert(0, jsonEncode(headerData));
+
+                            if (context.mounted) {
+                              await showDialog(
+                                context: context,
+                                builder: (BuildContext context) => QrCodeViewer(
+                                  qrChunks: qrChunks,
+                                  errorCorrection: settings["errorCorrection"]!,
+                                ),
+                              );
+                            }
+
+                            appState.changesMade();
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                            }
+                          },
+                          child: Text(localizations.qr_code),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            await FilePicker.saveFile(
+                              dialogTitle: '${localizations.output_file}:',
+                              fileName: 'ChameleonUltraGUISettings.json',
+                              bytes: const Utf8Encoder().convert(
+                                appState.sharedPreferencesProvider
+                                    .dumpSettingsToJson(),
+                              ),
+                            );
+                          },
+                          child: Text(AppLocalizations.of(context)!.json_file),
+                        ),
                       ],
-                    )),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(AppLocalizations.of(context)!.export_settings),
+                      const Icon(Icons.upload),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 10),
               FittedBox(
@@ -364,10 +383,14 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   onPressed: () => showDialog<String>(
                     context: context,
                     builder: (BuildContext context) => AlertDialog(
-                      title:
-                          Text(AppLocalizations.of(context)!.import_settings),
-                      content: Text(AppLocalizations.of(context)!
-                          .import_settings_description),
+                      title: Text(
+                        AppLocalizations.of(context)!.import_settings,
+                      ),
+                      content: Text(
+                        AppLocalizations.of(
+                          context,
+                        )!.import_settings_description,
+                      ),
                       actions: <Widget>[
                         TextButton(
                           onPressed: () => Navigator.pop(context),
@@ -379,10 +402,14 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                               await showDialog(
                                 context: context,
                                 builder: (BuildContext context) => AlertDialog(
-                                  title:
-                                      Text(AppLocalizations.of(context)!.error),
-                                  content: Text(AppLocalizations.of(context)!
-                                      .qr_code_import_not_supported_description),
+                                  title: Text(
+                                    AppLocalizations.of(context)!.error,
+                                  ),
+                                  content: Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.qr_code_import_not_supported_description,
+                                  ),
                                   actions: <Widget>[
                                     TextButton(
                                       onPressed: () => Navigator.pop(context),
@@ -395,10 +422,11 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                             }
 
                             String? jsonData = await showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return const QrCodeImport();
-                                });
+                              context: context,
+                              builder: (BuildContext context) {
+                                return const QrCodeImport();
+                              },
+                            );
 
                             if (jsonData == null) {
                               return;
@@ -419,8 +447,9 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                             if (result != null) {
                               File file = File(result.path!);
                               var contents = await file.readAsBytes();
-                              var string =
-                                  const Utf8Decoder().convert(contents);
+                              var string = const Utf8Decoder().convert(
+                                contents,
+                              );
                               appState.sharedPreferencesProvider
                                   .restoreSettingsFromJson(string);
                               appState.changesMade();
@@ -452,73 +481,96 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     content: Center(
                       child: FutureBuilder(
                         future: getFutureData(),
-                        builder:
-                            (BuildContext context, AsyncSnapshot snapshot) {
+                        builder: (BuildContext context, AsyncSnapshot snapshot) {
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
                             return const Center(
-                                child: CircularProgressIndicator());
+                              child: CircularProgressIndicator(),
+                            );
                           } else if (snapshot.hasError) {
                             appState.connector!.performDisconnect();
                             return ErrorPage(
-                                errorMessage: snapshot.error.toString());
+                              errorMessage: snapshot.error.toString(),
+                            );
                           } else {
                             final (names, contributors, packageInfo) =
                                 snapshot.data;
                             return SingleChildScrollView(
-                                child: Column(
-                              children: [
-                                const Text('Chameleon Ultra GUI',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
-                                Text(localizations.about_text),
-                                const SizedBox(height: 10),
-                                Text('${localizations.version}:'),
-                                Text(
+                              child: Column(
+                                children: [
+                                  const Text(
+                                    'Chameleon Ultra GUI',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(localizations.about_text),
+                                  const SizedBox(height: 10),
+                                  Text('${localizations.version}:'),
+                                  Text(
                                     '${packageInfo.version} (Build ${packageInfo.buildNumber})',
                                     style: const TextStyle(
-                                        fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 10),
-                                Text('${localizations.developed_by}:'),
-                                const SizedBox(height: 10),
-                                DeveloperList(avatars: developers),
-                                const SizedBox(height: 10),
-                                Text('${localizations.license}:'),
-                                const Text('GNU General Public License v3.0',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 10),
-                                GestureDetector(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text('${localizations.developed_by}:'),
+                                  const SizedBox(height: 10),
+                                  DeveloperList(avatars: developers),
+                                  const SizedBox(height: 10),
+                                  Text('${localizations.license}:'),
+                                  const Text(
+                                    'GNU General Public License v3.0',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  GestureDetector(
                                     onTap: () async {
-                                      await launchUrl(Uri.parse(
-                                          'https://github.com/GameTec-live/ChameleonUltraGUI'));
+                                      await launchUrl(
+                                        Uri.parse(
+                                          'https://github.com/GameTec-live/ChameleonUltraGUI',
+                                        ),
+                                      );
                                     },
                                     child: const Text(
-                                        'https://github.com/GameTec-live/ChameleonUltraGUI')),
-                                const SizedBox(height: 30),
-                                GestureDetector(
+                                      'https://github.com/GameTec-live/ChameleonUltraGUI',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 30),
+                                  GestureDetector(
                                     onTap: () async {
-                                      await launchUrl(Uri.parse(
-                                          'https://opencollective.com/chameleon-ultra-gui'));
+                                      await launchUrl(
+                                        Uri.parse(
+                                          'https://opencollective.com/chameleon-ultra-gui',
+                                        ),
+                                      );
                                     },
-                                    child:
-                                        Text(localizations.thanks_for_support)),
-                                const SizedBox(height: 10),
-                                Text(names,
+                                    child: Text(
+                                      localizations.thanks_for_support,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    names,
                                     style: const TextStyle(
-                                        fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 10),
-                                Text('${localizations.code_contributors}:'),
-                                const SizedBox(height: 10),
-                                DeveloperList(avatars: contributors),
-                                const SizedBox(height: 10),
-                                Text(localizations.trademarks_mifare),
-                                const SizedBox(height: 10),
-                                Text(localizations.trademarks_em),
-                                const SizedBox(height: 10),
-                                Text(localizations.trademarks_hid),
-                              ],
-                            ));
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text('${localizations.code_contributors}:'),
+                                  const SizedBox(height: 10),
+                                  DeveloperList(avatars: contributors),
+                                  const SizedBox(height: 10),
+                                  Text(localizations.trademarks_mifare),
+                                  const SizedBox(height: 10),
+                                  Text(localizations.trademarks_em),
+                                  const SizedBox(height: 10),
+                                  Text(localizations.trademarks_hid),
+                                ],
+                              ),
+                            );
                           }
                         },
                       ),
@@ -540,39 +592,43 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                     'BSD-3-Clause': await loadLicense('BSD-3-Clause'),
                     'GPL3': await loadLicense('GPL3'),
                     'LGPL3': await loadLicense('LGPL3'),
-                    'MIT': await loadLicense('MIT')
+                    'MIT': await loadLicense('MIT'),
                   };
 
                   // font.dart
-                  LicenseRegistry.addLicense(() => Stream<LicenseEntry>.value(
-                        LicenseEntryWithLineBreaks(
-                          <String>['chinese_font_library'],
-                          licenses['BSD-3-Clause']!,
-                        ),
-                      ));
+                  LicenseRegistry.addLicense(
+                    () => Stream<LicenseEntry>.value(
+                      LicenseEntryWithLineBreaks(<String>[
+                        'chinese_font_library',
+                      ], licenses['BSD-3-Clause']!),
+                    ),
+                  );
 
                   // ported hardnested to Windows + MSVC, separation from proxmark3 code
-                  LicenseRegistry.addLicense(() => Stream<LicenseEntry>.value(
-                        LicenseEntryWithLineBreaks(
-                          <String>['FlipperNestedRecovery'],
-                          licenses['LGPL3']!,
-                        ),
-                      ));
+                  LicenseRegistry.addLicense(
+                    () => Stream<LicenseEntry>.value(
+                      LicenseEntryWithLineBreaks(<String>[
+                        'FlipperNestedRecovery',
+                      ], licenses['LGPL3']!),
+                    ),
+                  );
 
-                  LicenseRegistry.addLicense(() => Stream<LicenseEntry>.value(
-                        LicenseEntryWithLineBreaks(
-                          <String>['proxmark3'],
-                          licenses['GPL3']!,
-                        ),
-                      ));
+                  LicenseRegistry.addLicense(
+                    () => Stream<LicenseEntry>.value(
+                      LicenseEntryWithLineBreaks(<String>[
+                        'proxmark3',
+                      ], licenses['GPL3']!),
+                    ),
+                  );
 
                   // hardnested tables uncompressor
-                  LicenseRegistry.addLicense(() => Stream<LicenseEntry>.value(
-                        LicenseEntryWithLineBreaks(
-                          <String>['minlzma'],
-                          licenses['MIT']!,
-                        ),
-                      ));
+                  LicenseRegistry.addLicense(
+                    () => Stream<LicenseEntry>.value(
+                      LicenseEntryWithLineBreaks(<String>[
+                        'minlzma',
+                      ], licenses['MIT']!),
+                    ),
+                  );
 
                   if (context.mounted) {
                     showLicensePage(context: context);
@@ -591,8 +647,9 @@ class SettingsMainPageState extends State<SettingsMainPage> {
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () async {
-                  await launchUrl(Uri.parse(
-                      'https://crowdin.com/project/chameleonultragui'));
+                  await launchUrl(
+                    Uri.parse('https://crowdin.com/project/chameleonultragui'),
+                  );
                 },
                 child: Text(localizations.help_translate),
               ),
@@ -602,10 +659,13 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   context: context,
                   builder: (BuildContext context) => AlertDialog(
                     title: Text(localizations.emulate_device),
-                    content: Text(localizations.emulate_device_confirmation(
+                    content: Text(
+                      localizations.emulate_device_confirmation(
                         appState.sharedPreferencesProvider.isEmulatedChameleon()
                             ? localizations.deactivate.toLowerCase()
-                            : localizations.activate.toLowerCase())),
+                            : localizations.activate.toLowerCase(),
+                      ),
+                    ),
                     actions: <Widget>[
                       TextButton(
                         onPressed: () => Navigator.pop(context),
@@ -614,9 +674,10 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       TextButton(
                         onPressed: () {
                           appState.sharedPreferencesProvider
-                              .setEmulatedChameleon(!appState
-                                  .sharedPreferencesProvider
-                                  .isEmulatedChameleon());
+                              .setEmulatedChameleon(
+                                !appState.sharedPreferencesProvider
+                                    .isEmulatedChameleon(),
+                              );
                           appState.connector = null;
                           appState.changesMade();
                           Navigator.pop(context);
@@ -627,7 +688,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ),
                 ),
                 child: Text(
-                    "${appState.sharedPreferencesProvider.isEmulatedChameleon() ? localizations.deactivate : localizations.activate} ${localizations.emulate_device.toLowerCase()}"),
+                  "${appState.sharedPreferencesProvider.isEmulatedChameleon() ? localizations.deactivate : localizations.activate} ${localizations.emulate_device.toLowerCase()}",
+                ),
               ),
               const SizedBox(height: 10),
               TextButton(
@@ -635,10 +697,13 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   context: context,
                   builder: (BuildContext context) => AlertDialog(
                     title: Text(localizations.debug_mode),
-                    content: Text(localizations.debug_mode_confirmation(
+                    content: Text(
+                      localizations.debug_mode_confirmation(
                         appState.sharedPreferencesProvider.isDebugMode()
                             ? localizations.deactivate.toLowerCase()
-                            : localizations.activate.toLowerCase())),
+                            : localizations.activate.toLowerCase(),
+                      ),
+                    ),
                     actions: <Widget>[
                       TextButton(
                         onPressed: () => Navigator.pop(context),
@@ -647,8 +712,8 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                       TextButton(
                         onPressed: () {
                           appState.sharedPreferencesProvider.setDebugMode(
-                              !appState.sharedPreferencesProvider
-                                  .isDebugMode());
+                            !appState.sharedPreferencesProvider.isDebugMode(),
+                          );
                           appState.changesMade();
                           Navigator.pop(context);
                         },
@@ -658,8 +723,57 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                   ),
                 ),
                 child: Text(
-                    "${appState.sharedPreferencesProvider.isDebugMode() ? localizations.deactivate : localizations.activate} ${localizations.debug_mode.toLowerCase()}"),
-              )
+                  "${appState.sharedPreferencesProvider.isDebugMode() ? localizations.deactivate : localizations.activate} ${localizations.debug_mode.toLowerCase()}",
+                ),
+              ),
+              if (appState.communicator != null) ...[
+                const SizedBox(height: 20),
+                const Divider(),
+                Text(
+                  "轮询 / Polling",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("自动轮询 / Auto polling"),
+                    Switch(
+                      value: pollingEnable,
+                      onChanged: (value) async {
+                        setState(() => pollingEnable = value);
+                        await appState.communicator!.setPollingEnable(value);
+                      },
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("轮询间隔(ms) / Interval(ms):"),
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      width: 90,
+                      child: TextField(
+                        controller: pollingIntervalController,
+                        keyboardType: TextInputType.number,
+                        onSubmitted: (value) async {
+                          var ms = int.tryParse(value) ?? 500;
+                          if (ms < 100) ms = 100;
+                          if (ms > 5000) ms = 5000;
+                          setState(() {
+                            pollingInterval = ms;
+                            pollingIntervalController.text = "$ms";
+                          });
+                          await appState.communicator!.setPollingInterval(ms);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text("(100-5000)"),
+                  ],
+                ),
+              ],
             ],
           ),
         ),

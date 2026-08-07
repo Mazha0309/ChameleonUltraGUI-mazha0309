@@ -116,7 +116,7 @@ class HomePageState extends State<HomePage> {
       return AppLocalizations.of(context)!.unknown;
     }
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 16; i++) {
       if (slotTypes[i].notMatch()) {
         usedSlotsOut8++;
       }

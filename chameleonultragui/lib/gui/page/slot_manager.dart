@@ -25,20 +25,14 @@ class SlotManagerPage extends StatefulWidget {
 }
 
 class SlotManagerPageState extends State<SlotManagerPage> {
-  List<SlotTypes> usedSlots = List.generate(
-    8,
-    (_) => SlotTypes(),
-  );
+  List<SlotTypes> usedSlots = List.generate(16, (_) => SlotTypes());
 
   List<EnabledSlotInfo> enabledSlots = List.generate(
-    8,
+    16,
     (_) => EnabledSlotInfo(),
   );
 
-  List<SlotNames> slotData = List.generate(
-    8,
-    (_) => SlotNames(),
-  );
+  List<SlotNames> slotData = List.generate(16, (_) => SlotNames());
 
   int progress = -1;
   int gridPosition = 0;
@@ -79,7 +73,10 @@ class SlotManagerPageState extends State<SlotManagerPage> {
   }
 
   Future<void> onTap(
-      CardSave card, dynamic close, AppLocalizations localizations) async {
+    CardSave card,
+    dynamic close,
+    AppLocalizations localizations,
+  ) async {
     var appState = Provider.of<ChameleonGUIState>(context, listen: false);
 
     if (isMifareClassic(card.tag)) {
@@ -91,32 +88,39 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       }
 
       await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.hf, true);
+      await appState.communicator!.enableSlot(
+        gridPosition,
+        TagFrequency.hf,
+        true,
+      );
       await appState.communicator!.activateSlot(gridPosition);
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
       var cardData = CardData(
-          uid: hexToBytes(card.uid),
-          atqa: card.atqa,
-          sak: card.sak,
-          ats: card.ats);
+        uid: hexToBytes(card.uid),
+        atqa: card.atqa,
+        sak: card.sak,
+        ats: card.ats,
+      );
       await appState.communicator!.setMf1AntiCollision(cardData);
 
       List<int> blockChunk = [];
       int lastSend = 0;
 
-      for (var blockOffset = 0;
-          blockOffset <
-              mfClassicGetBlockCount(
-                  chameleonTagTypeGetMfClassicType(card.tag));
-          blockOffset++) {
+      for (
+        var blockOffset = 0;
+        blockOffset <
+            mfClassicGetBlockCount(chameleonTagTypeGetMfClassicType(card.tag));
+        blockOffset++
+      ) {
         if ((card.data.length > blockOffset &&
                 card.data[blockOffset].isEmpty) ||
             blockChunk.length >= 128) {
           if (blockChunk.isNotEmpty) {
-            await appState.communicator!
-                .setMf1BlockData(lastSend, Uint8List.fromList(blockChunk));
+            await appState.communicator!.setMf1BlockData(
+              lastSend,
+              Uint8List.fromList(blockChunk),
+            );
             blockChunk = [];
             lastSend = blockOffset;
           }
@@ -127,126 +131,159 @@ class SlotManagerPageState extends State<SlotManagerPage> {
           blockChunk.addAll(card.data[blockOffset]);
         }
 
-        setUploadState((blockOffset /
-                mfClassicGetBlockCount(
-                    chameleonTagTypeGetMfClassicType(card.tag)) *
-                100)
-            .round());
+        setUploadState(
+          (blockOffset /
+                  mfClassicGetBlockCount(
+                    chameleonTagTypeGetMfClassicType(card.tag),
+                  ) *
+                  100)
+              .round(),
+        );
         await asyncSleep(1);
       }
 
       if (blockChunk.isNotEmpty) {
-        await appState.communicator!
-            .setMf1BlockData(lastSend, Uint8List.fromList(blockChunk));
+        await appState.communicator!.setMf1BlockData(
+          lastSend,
+          Uint8List.fromList(blockChunk),
+        );
       }
 
       setUploadState(100);
 
       await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.hf);
+        gridPosition,
+        (card.name.isEmpty) ? localizations.no_name : card.name,
+        TagFrequency.hf,
+      );
       await appState.communicator!.saveSlotData();
       appState.changesMade();
       refreshSlot();
     } else if (isEM410X(card.tag)) {
       close(context, card.name);
       await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.lf, true);
+      await appState.communicator!.enableSlot(
+        gridPosition,
+        TagFrequency.lf,
+        true,
+      );
       await appState.communicator!.activateSlot(gridPosition);
       TagType slotTagType = card.tag == TagType.em410XElectra
           ? TagType.em410XElectra
           : TagType.em410X;
       await appState.communicator!.setSlotType(gridPosition, slotTagType);
-      await appState.communicator!
-          .setDefaultDataToSlot(gridPosition, slotTagType);
+      await appState.communicator!.setDefaultDataToSlot(
+        gridPosition,
+        slotTagType,
+      );
       await appState.communicator!.setEM410XEmulatorID(hexToBytes(card.uid));
       await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.lf);
+        gridPosition,
+        (card.name.isEmpty) ? localizations.no_name : card.name,
+        TagFrequency.lf,
+      );
       await appState.communicator!.saveSlotData();
       appState.changesMade();
       refreshSlot();
     } else if (card.tag == TagType.hidProx) {
       close(context, card.name);
       await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.lf, true);
+      await appState.communicator!.enableSlot(
+        gridPosition,
+        TagFrequency.lf,
+        true,
+      );
       await appState.communicator!.activateSlot(gridPosition);
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
       await appState.communicator!.setHIDProxEmulatorID(
-          hexToBytes(HIDCard.fromUID(card.uid).toString()));
+        hexToBytes(HIDCard.fromUID(card.uid).toString()),
+      );
       await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.lf);
+        gridPosition,
+        (card.name.isEmpty) ? localizations.no_name : card.name,
+        TagFrequency.lf,
+      );
       await appState.communicator!.saveSlotData();
       appState.changesMade();
       refreshSlot();
     } else if (card.tag == TagType.viking) {
       close(context, card.name);
       await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.lf, true);
+      await appState.communicator!.enableSlot(
+        gridPosition,
+        TagFrequency.lf,
+        true,
+      );
       await appState.communicator!.activateSlot(gridPosition);
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
       await appState.communicator!.setVikingEmulatorID(hexToBytes(card.uid));
       await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.lf);
+        gridPosition,
+        (card.name.isEmpty) ? localizations.no_name : card.name,
+        TagFrequency.lf,
+      );
       await appState.communicator!.saveSlotData();
       appState.changesMade();
       refreshSlot();
     } else if (card.tag == TagType.pac) {
       close(context, card.name);
       await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.lf, true);
+      await appState.communicator!.enableSlot(
+        gridPosition,
+        TagFrequency.lf,
+        true,
+      );
       await appState.communicator!.activateSlot(gridPosition);
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
       await appState.communicator!.setPacEmulatorID(hexToBytes(card.uid));
       await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.lf);
+        gridPosition,
+        (card.name.isEmpty) ? localizations.no_name : card.name,
+        TagFrequency.lf,
+      );
       await appState.communicator!.saveSlotData();
       appState.changesMade();
       refreshSlot();
     } else if (card.tag == TagType.ioProx) {
       close(context, card.name);
       await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.lf, true);
+      await appState.communicator!.enableSlot(
+        gridPosition,
+        TagFrequency.lf,
+        true,
+      );
       await appState.communicator!.activateSlot(gridPosition);
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
       await appState.communicator!.setIoProxEmulatorID(hexToBytes(card.uid));
       await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.lf);
+        gridPosition,
+        (card.name.isEmpty) ? localizations.no_name : card.name,
+        TagFrequency.lf,
+      );
       await appState.communicator!.saveSlotData();
       appState.changesMade();
       refreshSlot();
     } else if (card.tag == TagType.idteck) {
       close(context, card.name);
       await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.lf, true);
+      await appState.communicator!.enableSlot(
+        gridPosition,
+        TagFrequency.lf,
+        true,
+      );
       await appState.communicator!.activateSlot(gridPosition);
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
       await appState.communicator!.setIdteckEmulatorID(hexToBytes(card.uid));
       await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.lf);
+        gridPosition,
+        (card.name.isEmpty) ? localizations.no_name : card.name,
+        TagFrequency.lf,
+      );
       await appState.communicator!.saveSlotData();
       appState.changesMade();
       refreshSlot();
@@ -255,44 +292,58 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       setUploadState(0);
 
       await appState.communicator!.setReaderDeviceMode(false);
-      await appState.communicator!
-          .enableSlot(gridPosition, TagFrequency.hf, true);
+      await appState.communicator!.enableSlot(
+        gridPosition,
+        TagFrequency.hf,
+        true,
+      );
       await appState.communicator!.activateSlot(gridPosition);
       await appState.communicator!.setSlotType(gridPosition, card.tag);
       await appState.communicator!.setDefaultDataToSlot(gridPosition, card.tag);
       var cardData = CardData(
-          uid: hexToBytes(card.uid),
-          atqa: card.atqa,
-          sak: card.sak,
-          ats: card.ats);
+        uid: hexToBytes(card.uid),
+        atqa: card.atqa,
+        sak: card.sak,
+        ats: card.ats,
+      );
       await appState.communicator!.setMf1AntiCollision(cardData);
 
-      for (var page = 0;
-          page < mfUltralightGetPagesCount(card.tag) && card.data.length > page;
-          page++) {
-        await appState.communicator!
-            .mf0EmulatorWritePages(page, card.data[page]);
+      for (
+        var page = 0;
+        page < mfUltralightGetPagesCount(card.tag) && card.data.length > page;
+        page++
+      ) {
+        await appState.communicator!.mf0EmulatorWritePages(
+          page,
+          card.data[page],
+        );
 
         setUploadState(
-            (page / mfUltralightGetPagesCount(card.tag) * 100).round());
+          (page / mfUltralightGetPagesCount(card.tag) * 100).round(),
+        );
 
         await asyncSleep(1);
       }
 
       if (card.extraData.ultralightVersion.isNotEmpty) {
-        await appState.communicator!
-            .mf0EmulatorSetVersionData(card.extraData.ultralightVersion);
+        await appState.communicator!.mf0EmulatorSetVersionData(
+          card.extraData.ultralightVersion,
+        );
       }
 
       if (card.extraData.ultralightSignature.isNotEmpty) {
-        await appState.communicator!
-            .mf0EmulatorSetSignatureData(card.extraData.ultralightSignature);
+        await appState.communicator!.mf0EmulatorSetSignatureData(
+          card.extraData.ultralightSignature,
+        );
       }
 
       if (card.extraData.ultralightCounters.isNotEmpty) {
         for (int i = 0; i < card.extraData.ultralightCounters.length; i++) {
           await appState.communicator!.mf0EmulatorSetCounterData(
-              i, card.extraData.ultralightCounters[i], true);
+            i,
+            card.extraData.ultralightCounters[i],
+            true,
+          );
         }
       }
 
@@ -303,9 +354,10 @@ class SlotManagerPageState extends State<SlotManagerPage> {
       setUploadState(100);
 
       await appState.communicator!.setSlotTagName(
-          gridPosition,
-          (card.name.isEmpty) ? localizations.no_name : card.name,
-          TagFrequency.hf);
+        gridPosition,
+        (card.name.isEmpty) ? localizations.no_name : card.name,
+        TagFrequency.hf,
+      );
       await appState.communicator!.saveSlotData();
       appState.changesMade();
       refreshSlot();
@@ -338,9 +390,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     var localizations = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(localizations.slot_manager),
-      ),
+      appBar: AppBar(title: Text(localizations.slot_manager)),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -357,108 +407,143 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                 } else {
                   return Expanded(
                     child: AlignedGridView.count(
-                        padding: const EdgeInsets.all(20),
-                        crossAxisCount:
-                            MediaQuery.of(context).size.width >= 700 ? 2 : 1,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        itemCount: 8,
-                        itemBuilder: (BuildContext context, int index) {
-                          return Container(
-                            constraints: const BoxConstraints(
-                                maxHeight: 160, minHeight: 100),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  gridPosition = index;
-                                });
-                                cardSelectDialog(context);
-                              },
-                              style: ButtonStyle(
-                                shape: WidgetStateProperty.all<
-                                    RoundedRectangleBorder>(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18.0),
+                      padding: const EdgeInsets.all(20),
+                      crossAxisCount: MediaQuery.of(context).size.width >= 700
+                          ? 2
+                          : 1,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      itemCount: 16,
+                      itemBuilder: (BuildContext context, int index) {
+                        return Container(
+                          constraints: const BoxConstraints(
+                            maxHeight: 160,
+                            minHeight: 100,
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                gridPosition = index;
+                              });
+                              cardSelectDialog(context);
+                            },
+                            style: ButtonStyle(
+                              shape:
+                                  WidgetStateProperty.all<
+                                    RoundedRectangleBorder
+                                  >(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18.0),
+                                    ),
                                   ),
-                                ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                top: 8.0,
+                                left: 8.0,
+                                bottom: 6.0,
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                    top: 8.0, left: 8.0, bottom: 6.0),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(Icons.nfc,
-                                            color: enabledSlots[index].any()
-                                                ? Colors.green
-                                                : Colors.deepOrange),
-                                        const SizedBox(width: 5),
-                                        Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.nfc,
+                                        color: enabledSlots[index].any()
+                                            ? Colors.green
+                                            : Colors.deepOrange,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Expanded(
+                                        child: Text(
+                                          "${localizations.slot} ${index + 1}",
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (index >= 8) ...[
+                                        const SizedBox(width: 4),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 5,
+                                            vertical: 1,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.purple,
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
                                           child: Text(
-                                            "${localizations.slot} ${index + 1}",
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
+                                            "9-16",
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                            ),
                                           ),
                                         ),
                                       ],
-                                    ),
-                                    const SizedBox(height: 20),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                        const Icon(Icons.credit_card),
-                                        const SizedBox(width: 5),
-                                        Expanded(
-                                            child: Text(
+                                    ],
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.credit_card),
+                                      const SizedBox(width: 5),
+                                      Expanded(
+                                        child: Text(
                                           "${slotData[index].hf} (${chameleonTagToString(usedSlots[index].hf, localizations)})",
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
-                                        ))
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            children: [
-                                              const Icon(Icons.wifi),
-                                              const SizedBox(width: 5),
-                                              Expanded(
-                                                  child: Text(
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            const Icon(Icons.wifi),
+                                            const SizedBox(width: 5),
+                                            Expanded(
+                                              child: Text(
                                                 "${slotData[index].lf} (${chameleonTagToString(usedSlots[index].lf, localizations)})",
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
                                                 softWrap: true,
-                                              ))
-                                            ],
-                                          ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        IconButton(
-                                          onPressed: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (BuildContext context) {
-                                                return SlotSettings(
-                                                    slot: index,
-                                                    refresh: refreshSlot);
-                                              },
-                                            );
-                                          },
-                                          icon: const Icon(Icons.settings),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder: (BuildContext context) {
+                                              return SlotSettings(
+                                                slot: index,
+                                                refresh: refreshSlot,
+                                              );
+                                            },
+                                          );
+                                        },
+                                        icon: const Icon(Icons.settings),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
-                          );
-                        }),
+                          ),
+                        );
+                      },
+                    ),
                   );
                 }
               },
@@ -473,7 +558,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                   value: (progress / 100).toDouble(),
                 ),
               ),
-            ]
+            ],
           ],
         ),
       ),
