@@ -17,7 +17,7 @@ class GeofenceService {
 
   GeofenceService._();
 
-  static const int _checkIntervalSeconds = 30;
+  static const int _checkIntervalSeconds = 2;
   static const int _scanTimeoutSeconds = 8;
 
   ChameleonGUIState? _appState;
@@ -164,7 +164,10 @@ class GeofenceService {
       final originalSlot = await communicator.getActiveSlot();
       appState.sharedPreferencesProvider
           .setGeofenceOriginalSlot(fence.id, originalSlot);
-      await communicator.activateSlot(fence.targetSlot);
+      // Skip the switch when the device is already on the target slot.
+      if (originalSlot != fence.targetSlot) {
+        await communicator.activateSlot(fence.targetSlot);
+      }
     });
   }
 
@@ -173,7 +176,10 @@ class GeofenceService {
     final originalSlot = prefs.getGeofenceOriginalSlots()[fence.id];
     if (originalSlot == null) return;
     await _connectAndRun(appState, (communicator) async {
-      await communicator.activateSlot(originalSlot);
+      final currentSlot = await communicator.getActiveSlot();
+      if (currentSlot != originalSlot) {
+        await communicator.activateSlot(originalSlot);
+      }
     });
     prefs.clearGeofenceOriginalSlot(fence.id);
   }

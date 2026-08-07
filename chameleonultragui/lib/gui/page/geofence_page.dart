@@ -30,6 +30,7 @@ class GeofencePageState extends State<GeofencePage> {
   bool _guardEnabled = false;
   LatLng? _center;
   LatLng? _myPosition;
+  LatLng? _cameraCenter;
   bool _locating = false;
   Timer? _positionTimer;
 
@@ -219,7 +220,11 @@ class GeofencePageState extends State<GeofencePage> {
                   onMapCreated: (controller) {
                     _amapController = controller;
                   },
+                  onCameraMoveEnd: (position) {
+                    _cameraCenter = position.target;
+                  },
                   onTap: (latLng) => _addFence(latLng),
+                  onLongPress: (latLng) => _addFence(latLng),
                   markers: {
                     if (_myPosition != null)
                       amap.Marker(
@@ -264,20 +269,39 @@ class GeofencePageState extends State<GeofencePage> {
                 Positioned(
                   right: 8,
                   bottom: 8,
-                  child: FloatingActionButton.small(
-                    onPressed: () async {
-                      try {
-                        final pos = await getCurrentPosition();
-                        setState(() {
-                          final (lat, lng) = GeoConvert.wgs84ToGcj02(pos.latitude, pos.longitude);
-                          _myPosition = LatLng(lat, lng);
-                          _center = _myPosition;
-                        });
-                        _amapController?.moveCamera(
-                            amap.CameraUpdate.newLatLngZoom(_center!, 16));
-                      } catch (_) {}
-                    },
-                    child: const Icon(Icons.my_location),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FloatingActionButton.small(
+                        heroTag: 'locate',
+                        tooltip: '定位 / Locate',
+                        onPressed: () async {
+                          try {
+                            final pos = await getCurrentPosition();
+                            setState(() {
+                              final (lat, lng) = GeoConvert.wgs84ToGcj02(pos.latitude, pos.longitude);
+                              _myPosition = LatLng(lat, lng);
+                              _center = _myPosition;
+                            });
+                            _amapController?.moveCamera(
+                                amap.CameraUpdate.newLatLngZoom(_center!, 16));
+                          } catch (_) {}
+                        },
+                        child: const Icon(Icons.my_location),
+                      ),
+                      const SizedBox(height: 8),
+                      FloatingActionButton.small(
+                        heroTag: 'centerAdd',
+                        tooltip: '以屏幕中心添加围栏 / Add at center',
+                        onPressed: () {
+                          final center = _cameraCenter;
+                          if (center != null) {
+                            _addFence(center);
+                          }
+                        },
+                        child: const Icon(Icons.add_location_alt),
+                      ),
+                    ],
                   ),
                 ),
               ],
