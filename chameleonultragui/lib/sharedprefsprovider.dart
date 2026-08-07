@@ -348,6 +348,9 @@ class CardSaveExtra {
   Uint8List ultralightSignature;
   Uint8List ultralightVersion;
   List<int> ultralightCounters;
+  // Per-sector Mifare Classic keys: 80 entries (40 sectors x A/B),
+  // 6 bytes each, empty when not recovered.
+  List<Uint8List> mifareClassicKeys;
 
   factory CardSaveExtra.import(Map<String, dynamic> data) {
     List<int> readBytes(Map<String, dynamic> data, String key) {
@@ -360,11 +363,18 @@ class CardSaveExtra {
     final ultralightCounters = data['ultralightCounters'] != null
         ? List<int>.from(data['ultralightCounters'] as List<dynamic>)
         : <int>[];
+    final mifareClassicKeys = (data['mifareClassicKeys'] != null
+            ? (data['mifareClassicKeys'] as List<dynamic>)
+                .map((k) =>
+                    Uint8List.fromList(List<int>.from(k as List<dynamic>)))
+                .toList()
+            : <Uint8List>[]);
 
     return CardSaveExtra(
         ultralightSignature: Uint8List.fromList(ultralightSignature),
         ultralightVersion: Uint8List.fromList(ultralightVersion),
-        ultralightCounters: ultralightCounters);
+        ultralightCounters: ultralightCounters,
+        mifareClassicKeys: mifareClassicKeys);
   }
 
   Map<String, dynamic> export() {
@@ -382,16 +392,23 @@ class CardSaveExtra {
       json['ultralightCounters'] = ultralightCounters;
     }
 
+    if (mifareClassicKeys.isNotEmpty) {
+      json['mifareClassicKeys'] =
+          mifareClassicKeys.map((k) => List<int>.from(k)).toList();
+    }
+
     return json;
   }
 
   CardSaveExtra(
       {Uint8List? ultralightSignature,
       Uint8List? ultralightVersion,
-      List<int>? ultralightCounters})
+      List<int>? ultralightCounters,
+      List<Uint8List>? mifareClassicKeys})
       : ultralightSignature = ultralightSignature ?? Uint8List(0),
         ultralightVersion = ultralightVersion ?? Uint8List(0),
-        ultralightCounters = ultralightCounters ?? <int>[];
+        ultralightCounters = ultralightCounters ?? <int>[],
+        mifareClassicKeys = mifareClassicKeys ?? <Uint8List>[];
 }
 
 class SharedPreferencesProvider extends ChangeNotifier {

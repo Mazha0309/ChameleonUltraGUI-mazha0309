@@ -120,6 +120,12 @@ Crypto Currencies if your into that jam (Although open collective is preferred):
   - 桌面端（Windows/Linux/macOS）自动隐藏围栏页（高德无桌面 SDK）
 - **调试**：围栏服务日志以 `[Geofence]` 前缀输出到 logcat，便于排障
 
+### 读卡增强
+
+- **LF 自动识别补全 Jablotron 协议**：读卡自动扫描新增 Jablotron（固件命令 3019），支持读取、卡包保存、槽位模拟（含 Jablotron 模拟器 ID 写入）
+- **M1 每扇区密钥保存**：读取 M1 卡时把试钥/恢复得到的每扇区密钥（80 个，A/B）随卡存入卡包；卡详情显示密钥保存数量，导出字典时优先使用存储密钥（比从 dump 提取更完整，含未读扇区）
+- **卡包一键写槽位**：卡详情新增"写入槽位"按钮，16 槽选择器，一键把卡包卡片（LF/M1/UL 全类型）写入设备指定槽位，自动设置卡类型/ID/数据块/名称并保存
+
 ### 高德地图 Key
 
 Key 绑定 Android 包名 + 签名指纹，**不进仓库**，构建时注入：

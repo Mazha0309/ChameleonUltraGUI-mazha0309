@@ -6,6 +6,7 @@ import 'package:chameleonultragui/helpers/mifare_classic/general.dart';
 import 'package:chameleonultragui/helpers/mifare_ultralight/general.dart';
 import 'package:flutter/material.dart';
 import 'package:chameleonultragui/helpers/general.dart';
+import 'package:chameleonultragui/helpers/write_to_slot.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/main.dart';
@@ -167,22 +168,31 @@ class CardViewMenuState extends State<CardViewMenu> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(height: 8),
+                  Text(
+                    "M1 密钥: ${currentSavedCard.extraData.mifareClassicKeys.where((k) => k.length == 6).length}/80 扇区密钥已保存",
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
                   ElevatedButton(
-                      onPressed:
-                          (mfClassicGetKeysFromDump(currentSavedCard.data)
-                                  .isNotEmpty)
-                              ? () async {
-                                  List<Uint8List> keys =
-                                      mfClassicGetKeysFromDump(
-                                          currentSavedCard.data);
-                                  await showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return DictionaryExportMenu(keys: keys);
-                                    },
-                                  );
-                                }
-                              : null,
+                      onPressed: () async {
+                        List<Uint8List> keys = currentSavedCard
+                                .extraData
+                                .mifareClassicKeys
+                                .where((k) => k.length == 6)
+                                .toList();
+                        if (keys.isEmpty) {
+                          keys = mfClassicGetKeysFromDump(
+                              currentSavedCard.data);
+                        }
+                        if (keys.isNotEmpty) {
+                          await showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return DictionaryExportMenu(keys: keys);
+                            },
+                          );
+                        }
+                      },
                       child: Text(localizations.export_to_dictionary)),
                 ],
               ),
@@ -234,7 +244,39 @@ class CardViewMenuState extends State<CardViewMenu> {
                     ),
                   ],
                 ),
-              ])
+              ]),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.save_alt),
+              label: const Text("写入槽位 / Write to slot"),
+              onPressed: () async {
+                if (appState.connector == null ||
+                    !appState.connector!.connected) {
+                  return;
+                }
+                final slot = await showDialog<int>(
+                  context: context,
+                  builder: (context) => SimpleDialog(
+                    title: const Text("选择目标槽位 / Target slot"),
+                    children: [
+                      for (int i = 0; i < 16; i++)
+                        SimpleDialogOption(
+                          onPressed: () => Navigator.pop(context, i),
+                          child: Text(
+                              "槽 ${i + 1}${i >= 8 ? " (高半区)" : ""}"),
+                        ),
+                    ],
+                  ),
+                );
+                if (slot == null) return;
+                await writeCardToSlot(context, currentSavedCard, slot);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("已写入槽 ${slot + 1} / Written to slot ${slot + 1}")),
+                  );
+                }
+              },
+            ),
           ],
         ],
       )),

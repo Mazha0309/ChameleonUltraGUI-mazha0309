@@ -462,7 +462,8 @@ List<TagType> getTagTypesByFrequency(TagFrequency frequency) {
       TagType.viking,
       TagType.pac,
       TagType.ioProx,
-      TagType.idteck
+      TagType.idteck,
+      TagType.jablotron
     ];
   }
 
@@ -570,6 +571,10 @@ LFCard getLFCardFromUID(TagType type, String uid) {
     return IdteckCard.fromUID(uid);
   }
 
+  if (type == TagType.jablotron) {
+    return JablotronCard.fromUID(uid);
+  }
+
   return EM410XCard.fromUID(uid, type: type);
 }
 
@@ -588,6 +593,8 @@ int uidSizeForLfTag(TagType type) {
     return 16;
   } else if (type == TagType.idteck) {
     return 8;
+  } else if (type == TagType.jablotron) {
+    return 5;
   }
 
   return 0;

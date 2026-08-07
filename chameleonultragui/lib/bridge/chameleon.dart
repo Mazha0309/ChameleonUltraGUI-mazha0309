@@ -680,6 +680,16 @@ class ChameleonCommunicator {
     return IoProxCard.fromBytes(resp.data);
   }
 
+  Future<JablotronCard?> readJablotron() async {
+    var resp = await sendCmd(ChameleonCommand.scanJablotronTag);
+
+    if (resp!.data.isEmpty) {
+      return null;
+    }
+
+    return JablotronCard.fromBytes(resp.data);
+  }
+
   Future<void> setEM410XEmulatorID(Uint8List uid) async {
     await sendCmd(ChameleonCommand.setEM410XemulatorID, data: uid);
   }
@@ -702,6 +712,10 @@ class ChameleonCommunicator {
 
   Future<void> setIdteckEmulatorID(Uint8List uid) async {
     await sendCmd(ChameleonCommand.setIdteckEmulatorID, data: uid);
+  }
+
+  Future<void> setJablotronEmulatorID(Uint8List uid) async {
+    await sendCmd(ChameleonCommand.setJablotronEmulatorID, data: uid);
   }
 
   Future<void> writeEM410XtoT55XX(

@@ -77,7 +77,9 @@ class CardReaderState extends State<MifareClassicHelper> {
           data: widget.mfcInfo.recovery!.cardData,
           ats: (widget.hfInfo.ats != localizations.no)
               ? hexToBytes(widget.hfInfo.ats)
-              : Uint8List(0)));
+              : Uint8List(0),
+          extraData: CardSaveExtra(
+              mifareClassicKeys: widget.mfcInfo.recovery!.validKeys)));
       appState.sharedPreferencesProvider.setCards(tags);
     }
   }

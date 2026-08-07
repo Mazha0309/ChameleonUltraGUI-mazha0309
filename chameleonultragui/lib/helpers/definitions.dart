@@ -97,6 +97,7 @@ enum ChameleonCommand {
   scanPacTag(3014),
   writePacToT5577(3015),
   writeIdteckToT5577(3018),
+  scanJablotronTag(3019),
   lfSniff(3031),
 
   mf1LoadBlockData(4000),
@@ -162,7 +163,9 @@ enum ChameleonCommand {
   getIoProxEmulatorID(5009),
 
   setIdteckEmulatorID(5012),
-  getIdteckEmulatorID(5013);
+  getIdteckEmulatorID(5013),
+  setJablotronEmulatorID(5010),
+  getJablotronEmulatorID(5011);
 
   const ChameleonCommand(this.value);
   final int value;
@@ -180,6 +183,7 @@ enum TagType {
   hidProx(200),
   ioProx(201),
   idteck(310),
+  jablotron(180),
   mifareMini(1000),
   mifare1K(1001),
   mifare2K(1002),
@@ -660,4 +664,16 @@ class IdteckCard extends LFCard {
   }
 
   IdteckCard({super.type = TagType.idteck, required super.uid});
+}
+
+class JablotronCard extends LFCard {
+  factory JablotronCard.fromBytes(Uint8List bytes) {
+    return JablotronCard(uid: bytes);
+  }
+
+  factory JablotronCard.fromUID(String uid) {
+    return JablotronCard.fromBytes(hexToBytes(uid));
+  }
+
+  JablotronCard({super.type = TagType.jablotron, required super.uid});
 }

@@ -233,6 +233,9 @@ class SlotEditMenuState extends State<SlotEditMenu> {
     } else if (selectedType! == TagType.idteck) {
       await appState.communicator!.setIdteckEmulatorID(
           hexToBytes(uidController.text.replaceAll(' ', '')));
+    } else if (selectedType! == TagType.jablotron) {
+      await appState.communicator!.setJablotronEmulatorID(
+          hexToBytes(uidController.text.replaceAll(' ', '')));
     } else if (isMifareClassic(selectedType!) ||
         isMifareUltralight(selectedType!)) {
       var cardData = CardData(
