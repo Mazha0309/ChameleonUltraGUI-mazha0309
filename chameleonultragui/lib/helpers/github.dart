@@ -156,27 +156,6 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
   String error = "";
 
   try {
-    final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/Mazha0309/ChameleonUltra-mazha0309/actions/artifacts?per_page=100")))
-        .body
-        .toString());
-
-    if (artifacts.containsKey("message")) {
-      error = artifacts["message"];
-      throw error;
-    }
-
-    for (var artifact in artifacts["artifacts"]) {
-      if (artifact["name"] ==
-              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app" &&
-          artifact["workflow_run"]["head_branch"] == "main" &&
-          artifact["workflow_run"]["head_repository_id"] == 581338100) {
-        return artifact["workflow_run"]["head_sha"];
-      }
-    }
-  } catch (_) {}
-
-  try {
     final releases = json.decode((await http.get(Uri.parse(
             "https://api.github.com/repos/Mazha0309/ChameleonUltra-mazha0309/releases")))
         .body
@@ -187,10 +166,14 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
       throw error;
     }
 
+    // Our fork's releases are versioned as v2.2.0-mazha0309-XXX tags;
+    // the latest release tag IS the newest available firmware.
     for (var release in releases) {
-      if (release["author"]["login"] == "github-actions[bot]" &&
-          release["prerelease"]) {
-        return release["target_commitish"];
+      if (release["assets"] is List &&
+          (release["assets"] as List).any((a) =>
+              a["name"] ==
+              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip")) {
+        return release["tag_name"] ?? "";
       }
     }
   } catch (_) {}
