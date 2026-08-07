@@ -413,7 +413,7 @@ class ChameleonCommunicator {
   }
 
   Future<(int, NestedNonces, NestedNonces, Uint8List)?>
-  getMf1StaticEncryptedNestedAcquire({
+      getMf1StaticEncryptedNestedAcquire({
     int sectorCount = 16,
     int startingSector = 0,
   }) async {
@@ -459,7 +459,8 @@ class ChameleonCommunicator {
     int status = (await sendCmd(
       ChameleonCommand.mf1CheckKey,
       data: Uint8List.fromList([keyType, block, ...key]),
-    ))!.status;
+    ))!
+        .status;
 
     return status == 0;
   }
@@ -488,7 +489,8 @@ class ChameleonCommunicator {
     return (await sendCmd(
       ChameleonCommand.mf1ReadBlock,
       data: Uint8List.fromList([keyType, block, ...key]),
-    ))!.data;
+    ))!
+        .data;
   }
 
   Future<bool> mf1WriteBlock(
@@ -502,7 +504,8 @@ class ChameleonCommunicator {
     return (await sendCmd(
           ChameleonCommand.mf1WriteBlock,
           data: Uint8List.fromList([keyType, block, ...key, ...data]),
-        ))!.status ==
+        ))!
+            .status ==
         0;
   }
 
@@ -553,7 +556,7 @@ class ChameleonCommunicator {
   }
 
   Future<Map<int, Map<int, Map<String, List<DetectionResult>>>>>
-  getMf1DetectionResult(int count) async {
+      getMf1DetectionResult(int count) async {
     List<DetectionResult> resultList = [];
     while (resultList.length < count) {
       // Get results from index
@@ -561,7 +564,8 @@ class ChameleonCommunicator {
         ChameleonCommand.mf1GetDetectionResult,
         data: Uint8List(4)
           ..buffer.asByteData().setInt32(0, resultList.length, Endian.big),
-      ))!.data;
+      ))!
+          .data;
 
       int pos = 0;
       while (pos < resp.length) {
@@ -1013,8 +1017,7 @@ class ChameleonCommunicator {
       isDetectionEnabled: resp.data[0] == 1, // is detection enabled
       isGen1a: resp.data[1] == 1, // is gen1a mode enabled
       isGen2: resp.data[2] == 1, // is gen2 mode enabled
-      isAntiColl:
-          resp.data[3] ==
+      isAntiColl: resp.data[3] ==
           1, // use anti collision data from block 0 mode enabled
       writeMode: mode, // write mode
     );
@@ -1179,6 +1182,18 @@ class ChameleonCommunicator {
     );
   }
 
+  Future<bool> getAbRebootEnable() async {
+    var resp = await sendCmd(ChameleonCommand.getAbRebootEnable);
+    return resp!.data[0] == 1;
+  }
+
+  Future<void> setAbRebootEnable(bool enable) async {
+    await sendCmd(
+      ChameleonCommand.setAbRebootEnable,
+      data: Uint8List.fromList([enable ? 1 : 0]),
+    );
+  }
+
   Future<void> clearBLEBoundedDevices() async {
     await sendCmd(ChameleonCommand.bleClearBondedDevices, skipReceive: true);
   }
@@ -1217,7 +1232,8 @@ class ChameleonCommunicator {
     return (await sendCmd(
       ChameleonCommand.mf1GetBlockData,
       data: Uint8List.fromList([startBlock, blockCount]),
-    ))!.data;
+    ))!
+        .data;
   }
 
   Future<CardData> mf1GetAntiCollData() async {
@@ -1238,7 +1254,8 @@ class ChameleonCommunicator {
   Future<Uint8List> getEM410XEmulatorID() async {
     Uint8List data = (await sendCmd(
       ChameleonCommand.getEM410XemulatorID,
-    ))!.data;
+    ))!
+        .data;
 
     if (data.length == 5 || data.length == 13) {
       return data;
@@ -1405,7 +1422,8 @@ class ChameleonCommunicator {
         ...u16ToBytes(bitLen),
         ...data,
       ]),
-    ))!.data;
+    ))!
+        .data;
   }
 
   Future<bool> mf0GetMagicMode() async {
@@ -1424,7 +1442,8 @@ class ChameleonCommunicator {
     return (await sendCmd(
       ChameleonCommand.mf0NtagReadEmuPageData,
       data: Uint8List.fromList([from, count]),
-    ))!.data;
+    ))!
+        .data;
   }
 
   Future<void> mf0EmulatorWritePages(int from, Uint8List data) async {
@@ -1468,7 +1487,8 @@ class ChameleonCommunicator {
     Uint8List data = (await sendCmd(
       ChameleonCommand.mf0NtagGetCounterData,
       data: Uint8List.fromList([index]),
-    ))!.data;
+    ))!
+        .data;
     return (((data[2] << 16) | (data[1] << 8) | data[0]), data[3] == 0xBD);
   }
 

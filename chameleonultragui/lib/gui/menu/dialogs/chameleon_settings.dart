@@ -28,6 +28,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   bool pollingEnable = false;
   int pollingInterval = 500;
   bool pollingLoaded = false;
+  bool abRebootEnable = true;
 
   @override
   void initState() {
@@ -44,6 +45,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
     try {
       pollingEnable = await appState.communicator!.getPollingEnable();
       pollingInterval = await appState.communicator!.getPollingInterval();
+      abRebootEnable = await appState.communicator!.getAbRebootEnable();
       pollingLoaded = true;
       if (mounted) {
         setState(() {});
@@ -415,6 +417,21 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           setState(() {});
                           appState.changesMade();
                         }),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("A+B同时长按软重启 / Soft reboot"),
+                        Switch(
+                          value: abRebootEnable,
+                          onChanged: (value) async {
+                            setState(() => abRebootEnable = value);
+                            await appState.communicator!
+                                .setAbRebootEnable(value);
+                          },
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 10),
                     const Text("轮询 / Polling:"),
                     const SizedBox(height: 7),
