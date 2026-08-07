@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/helpers/geofence.dart';
 import 'package:chameleonultragui/helpers/geofence_service.dart';
+import 'package:chameleonultragui/helpers/geo_convert.dart';
 
 /// AMap API key, injected at build time: flutter build apk --dart-define=AMAP_KEY=...
 /// Kept out of the repository on purpose (key is bound to the signing cert).
@@ -77,7 +78,8 @@ class GeofencePageState extends State<GeofencePage> {
           final pos = await getCurrentPosition();
           if (mounted) {
             setState(() {
-              _myPosition = LatLng(pos.latitude, pos.longitude);
+              final (lat, lng) = GeoConvert.wgs84ToGcj02(pos.latitude, pos.longitude);
+              _myPosition = LatLng(lat, lng);
             });
           }
         }
@@ -267,8 +269,8 @@ class GeofencePageState extends State<GeofencePage> {
                       try {
                         final pos = await getCurrentPosition();
                         setState(() {
-                          _myPosition =
-                              LatLng(pos.latitude, pos.longitude);
+                          final (lat, lng) = GeoConvert.wgs84ToGcj02(pos.latitude, pos.longitude);
+                          _myPosition = LatLng(lat, lng);
                           _center = _myPosition;
                         });
                         _amapController?.moveCamera(

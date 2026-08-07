@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:chameleonultragui/main.dart';
 import 'package:chameleonultragui/bridge/chameleon.dart';
 import 'package:chameleonultragui/helpers/geofence.dart';
+import 'package:chameleonultragui/helpers/geo_convert.dart';
 import 'package:chameleonultragui/sharedprefsprovider.dart';
 
 /// 电子围栏守护：常驻通知（防杀）+ 周期定位检查，进圈切槽、出圈恢复原槽。
@@ -132,11 +133,14 @@ class GeofenceService {
     }
 
     final enteredIds = prefs.getGeofenceEnteredIds().toSet();
+    // Fences are stored in GCJ-02 (map coordinates); convert GPS to match.
+    final (myLat, myLng) =
+        GeoConvert.wgs84ToGcj02(position.latitude, position.longitude);
 
     for (final fence in fences) {
       final distance = Geolocator.distanceBetween(
-        position.latitude,
-        position.longitude,
+        myLat,
+        myLng,
         fence.latitude,
         fence.longitude,
       );
