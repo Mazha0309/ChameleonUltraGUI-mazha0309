@@ -124,7 +124,14 @@ jobs:
           AEOF
           chmod +x AppDir/AppRun
           ../appimagetool --no-appstream AppDir ../ChameleonUltraGUI-mazha0309-x86_64.AppImage
-      - name: Upload AppImage to Release
+      - name: Package tar.gz fallback
+        run: |
+          cd chameleonultragui/build/linux/x64/release
+          tar czf ../../../../ChameleonUltraGUI-mazha0309-linux-x64.tar.gz bundle
+      - name: Upload Linux artifacts to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: chameleonultragui/build/ChameleonUltraGUI-mazha0309-x86_64.AppImage
+          files: |
+            chameleonultragui/build/ChameleonUltraGUI-mazha0309-x86_64.AppImage
+            chameleonultragui/build/ChameleonUltraGUI-mazha0309-linux-x64.tar.gz
+          fail_on_unmatched_files: false
