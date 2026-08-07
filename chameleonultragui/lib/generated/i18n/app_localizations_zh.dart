@@ -1945,6 +1945,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String slot_label(Object index) {
     return '槽 $index';
   }
+
+  @override
+  String get field_generator => '场发生器';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).

@@ -3706,6 +3706,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Slot {index}'**
   String slot_label(Object index);
+
+  /// No description provided for @field_generator.
+  ///
+  /// In en, this message translates to:
+  /// **'Field generator'**
+  String get field_generator;
 }
 
 class _AppLocalizationsDelegate

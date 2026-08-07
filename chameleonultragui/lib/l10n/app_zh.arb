@@ -593,5 +593,6 @@
   "write_to_slot": "写入槽位",
   "select_target_slot": "选择目标槽位",
   "written_to_slot": "已写入槽 {slot}",
-  "slot_label": "槽 {index}"
+  "slot_label": "槽 {index}",
+  "field_generator": "场发生器"
 }

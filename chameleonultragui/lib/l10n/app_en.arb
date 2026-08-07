@@ -593,5 +593,6 @@
   "write_to_slot": "Write to slot",
   "select_target_slot": "Select target slot",
   "written_to_slot": "Written to slot {slot}",
-  "slot_label": "Slot {index}"
+  "slot_label": "Slot {index}",
+  "field_generator": "Field generator"
 }

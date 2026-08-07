@@ -273,8 +273,9 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.backward,
                           localizations.clone_uid,
                           localizations.charge,
+                          localizations.field_generator,
                           localizations.toggle_polling,
-                          "进DFU"
+                          localizations.enter_dfu
                         ],
                         selectedValue: settings.aPress.value,
                         onChange: (int index) async {
@@ -288,8 +289,10 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           } else if (index == 4) {
                             mode = ButtonConfig.chargeStatus;
                           } else if (index == 5) {
-                            mode = ButtonConfig.togglePolling;
+                            mode = ButtonConfig.nfcFieldGenerator;
                           } else if (index == 6) {
+                            mode = ButtonConfig.togglePolling;
+                          } else if (index == 7) {
                             mode = ButtonConfig.enterDfuMode;
                           }
 
@@ -311,8 +314,9 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.backward,
                           localizations.clone_uid,
                           localizations.charge,
+                          localizations.field_generator,
                           localizations.toggle_polling,
-                          "进DFU"
+                          localizations.enter_dfu
                         ],
                         selectedValue: settings.bPress.value,
                         onChange: (int index) async {
@@ -326,8 +330,10 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           } else if (index == 4) {
                             mode = ButtonConfig.chargeStatus;
                           } else if (index == 5) {
-                            mode = ButtonConfig.togglePolling;
+                            mode = ButtonConfig.nfcFieldGenerator;
                           } else if (index == 6) {
+                            mode = ButtonConfig.togglePolling;
+                          } else if (index == 7) {
                             mode = ButtonConfig.enterDfuMode;
                           }
 
@@ -352,8 +358,9 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.backward,
                           localizations.clone_uid,
                           localizations.charge,
+                          localizations.field_generator,
                           localizations.toggle_polling,
-                          "进DFU"
+                          localizations.enter_dfu
                         ],
                         selectedValue: settings.aLongPress.value,
                         onChange: (int index) async {
@@ -367,8 +374,10 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           } else if (index == 4) {
                             mode = ButtonConfig.chargeStatus;
                           } else if (index == 5) {
-                            mode = ButtonConfig.togglePolling;
+                            mode = ButtonConfig.nfcFieldGenerator;
                           } else if (index == 6) {
+                            mode = ButtonConfig.togglePolling;
+                          } else if (index == 7) {
                             mode = ButtonConfig.enterDfuMode;
                           }
 
@@ -390,8 +399,9 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           localizations.backward,
                           localizations.clone_uid,
                           localizations.charge,
+                          localizations.field_generator,
                           localizations.toggle_polling,
-                          "进DFU"
+                          localizations.enter_dfu
                         ],
                         selectedValue: settings.bLongPress.value,
                         onChange: (int index) async {
@@ -405,8 +415,10 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                           } else if (index == 4) {
                             mode = ButtonConfig.chargeStatus;
                           } else if (index == 5) {
-                            mode = ButtonConfig.togglePolling;
+                            mode = ButtonConfig.nfcFieldGenerator;
                           } else if (index == 6) {
+                            mode = ButtonConfig.togglePolling;
+                          } else if (index == 7) {
                             mode = ButtonConfig.enterDfuMode;
                           }
 

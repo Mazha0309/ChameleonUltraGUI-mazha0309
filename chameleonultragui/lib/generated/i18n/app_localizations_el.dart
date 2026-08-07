@@ -2021,6 +2021,9 @@ class AppLocalizationsEl extends AppLocalizations {
   String slot_label(Object index) {
     return 'Slot $index';
   }
+
+  @override
+  String get field_generator => 'Field generator';
 }
 
 /// The translations for Modern Greek, as used in Greece (`el_GR`).

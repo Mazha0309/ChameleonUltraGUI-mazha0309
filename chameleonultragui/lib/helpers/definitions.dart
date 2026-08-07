@@ -254,6 +254,7 @@ enum ButtonConfig {
   cycleBackward(2),
   cloneUID(3),
   chargeStatus(4),
+  nfcFieldGenerator(5),
   togglePolling(6),
   enterDfuMode(7);
 

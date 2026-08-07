@@ -2005,4 +2005,7 @@ class AppLocalizationsDa extends AppLocalizations {
   String slot_label(Object index) {
     return 'Slot $index';
   }
+
+  @override
+  String get field_generator => 'Field generator';
 }
