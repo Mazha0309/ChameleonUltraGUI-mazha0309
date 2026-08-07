@@ -65,7 +65,7 @@ jobs:
         with:
           files: chameleonultragui-windows.zip
 
-  linux-appimage:
+  linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
