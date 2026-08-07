@@ -126,13 +126,35 @@ class GeofenceService {
 
   Future<void> _checkFences() async {
     final appState = _appState;
-    if (appState == null) return;
+    if (appState == null) {
+      _log('check skipped: appState null');
+      return;
+    }
     final prefs = appState.sharedPreferencesProvider;
-    if (!prefs.getGeofenceGuardEnabled()) return;
-    if (!await Geolocator.isLocationServiceEnabled()) return;
+    if (!prefs.getGeofenceGuardEnabled()) {
+      _log('check skipped: guard disabled');
+      return;
+    }
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      _log('check skipped: location service OFF');
+      return;
+    }
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      _log('check skipped: permission DENIED ($permission)');
+      return;
+    }
+    if (permission != LocationPermission.always) {
+      _log('WARNING: permission is $permission (need "always" for '
+          'background checks; current check may still work in foreground)');
+    }
 
     final fences = prefs.getGeofences().where((f) => f.enabled).toList();
-    if (fences.isEmpty) return;
+    if (fences.isEmpty) {
+      _log('check skipped: no enabled fences');
+      return;
+    }
 
     Position position;
     try {
@@ -140,7 +162,8 @@ class GeofenceService {
         locationSettings:
             const LocationSettings(accuracy: LocationAccuracy.medium),
       );
-    } catch (_) {
+    } catch (e) {
+      _log('check skipped: getCurrentPosition failed: $e');
       return;
     }
 
