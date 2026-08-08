@@ -65,6 +65,29 @@ jobs:
         with:
           files: chameleonultragui-windows.zip
 
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Build iOS (no codesign)
+        working-directory: chameleonultragui
+        run: |
+          flutter pub get
+          flutter build ios --release --no-codesign --dart-define=AMAP_KEY=${{ secrets.AMAP_KEY }}
+      - name: Package .app
+        run: |
+          cd chameleonultragui
+          mkdir -p ../ios_build
+          cp -r build/ios/iphoneos/*.app ../ios_build/
+          cd ../ios_build
+          zip -qr ../chameleonultragui-ios.app.zip *.app
+      - name: Upload iOS to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: chameleonultragui-ios.app.zip
   linux:
     runs-on: ubuntu-latest
     steps:
