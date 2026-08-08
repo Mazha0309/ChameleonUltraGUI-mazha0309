@@ -77,17 +77,17 @@ jobs:
         run: |
           flutter pub get
           flutter build ios --release --no-codesign --dart-define=AMAP_KEY=${{ secrets.AMAP_KEY }}
-      - name: Package .app
+      - name: Package unsigned IPA
         run: |
           cd chameleonultragui
-          mkdir -p ../ios_build
-          cp -r build/ios/iphoneos/*.app ../ios_build/
+          mkdir -p ../ios_build/Payload
+          cp -r build/ios/iphoneos/Runner.app ../ios_build/Payload/
           cd ../ios_build
-          zip -qr ../chameleonultragui-ios.app.zip *.app
-      - name: Upload iOS to Release
+          zip -qr ../chameleonultragui-ios.ipa Payload
+      - name: Upload IPA to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: chameleonultragui-ios.app.zip
+          files: chameleonultragui-ios.ipa
   linux:
     runs-on: ubuntu-latest
     steps:
