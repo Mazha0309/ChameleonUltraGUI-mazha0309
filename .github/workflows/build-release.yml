@@ -88,4 +88,4 @@ jobs:
       - name: Upload Linux tar.gz to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ChameleonUltraGUI-mazha0309-linux-x64.tar.gz
+          files: chameleonultragui/ChameleonUltraGUI-mazha0309-linux-x64.tar.gz
