@@ -1948,6 +1948,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get field_generator => '场发生器';
+
+  @override
+  String get view_dump => '查看数据';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -3661,4 +3664,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get auto_connect_first_device => '自動連接首個發現的裝置';
+
+  @override
+  String get view_dump => '查看資料';
 }

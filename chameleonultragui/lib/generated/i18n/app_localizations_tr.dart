@@ -2017,4 +2017,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get field_generator => 'Field generator';
+
+  @override
+  String get view_dump => 'View dump';
 }

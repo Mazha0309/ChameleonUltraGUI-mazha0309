@@ -2024,6 +2024,9 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get field_generator => 'Field generator';
+
+  @override
+  String get view_dump => 'View dump';
 }
 
 /// The translations for Modern Greek, as used in Greece (`el_GR`).
@@ -2954,4 +2957,7 @@ class AppLocalizationsElGr extends AppLocalizationsEl {
 
   @override
   String get language_name => 'Ελληνικά';
+
+  @override
+  String get view_dump => 'View dump';
 }

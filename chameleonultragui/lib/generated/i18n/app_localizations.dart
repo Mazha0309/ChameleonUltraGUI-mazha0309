@@ -3712,6 +3712,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Field generator'**
   String get field_generator;
+
+  /// No description provided for @view_dump.
+  ///
+  /// In en, this message translates to:
+  /// **'View dump'**
+  String get view_dump;
 }
 
 class _AppLocalizationsDelegate

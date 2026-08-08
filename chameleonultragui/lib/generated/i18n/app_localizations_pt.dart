@@ -2016,6 +2016,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get field_generator => 'Field generator';
+
+  @override
+  String get view_dump => 'View dump';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -2687,4 +2690,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get language_name => 'Português (Brasil)';
+
+  @override
+  String get view_dump => 'View dump';
 }
