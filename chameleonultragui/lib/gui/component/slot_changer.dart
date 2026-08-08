@@ -46,7 +46,7 @@ class SlotChangerState extends State<SlotChanger> {
       return [const Icon(Icons.warning)];
     }
 
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < usedSlots.length && i < 16; i++) {
       if (i == selectedSlot - 1) {
         icons.add(const Icon(
           Icons.circle_outlined,

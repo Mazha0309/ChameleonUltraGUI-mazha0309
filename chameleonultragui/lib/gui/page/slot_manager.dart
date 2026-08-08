@@ -49,6 +49,14 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     usedSlots = await appState.communicator!.getSlotTagTypes();
     enabledSlots = await appState.communicator!.getEnabledSlots();
     slotData = await appState.communicator!.getSlotTagNames();
+    // Pad to 16 so the fixed 16-cell grid never indexes out of range on
+    // devices running official 8-slot firmware.
+    usedSlots.addAll(
+        List.generate(16 - usedSlots.length, (_) => SlotTypes()));
+    enabledSlots.addAll(
+        List.generate(16 - enabledSlots.length, (_) => EnabledSlotInfo()));
+    slotData.addAll(
+        List.generate(16 - slotData.length, (_) => SlotNames()));
 
     for (SlotNames slot in slotData) {
       slot.hf = slot.hf.isEmpty ? localizations.no_name : slot.hf;

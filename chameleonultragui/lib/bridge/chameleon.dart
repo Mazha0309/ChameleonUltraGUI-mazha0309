@@ -998,11 +998,13 @@ class ChameleonCommunicator {
     List<SlotTypes> tags = [];
     var resp = await sendCmd(ChameleonCommand.getSlotInfo);
     var index = 0;
-    for (var slot = 0; slot < 16; slot++) {
+    // Read as many slots as the device reports (8 for official firmware,
+    // 16 for the mazha0309 fork); never exceed the response length.
+    while (index + 4 <= resp!.data.length) {
       tags.add(
         SlotTypes(
           hf: numberToChameleonTag(
-            bytesToU16(resp!.data.sublist(index, index + 2)),
+            bytesToU16(resp.data.sublist(index, index + 2)),
           ),
           lf: numberToChameleonTag(
             bytesToU16(resp.data.sublist(index + 2, index + 4)),
@@ -1111,13 +1113,16 @@ class ChameleonCommunicator {
   Future<List<EnabledSlotInfo>> getEnabledSlots() async {
     var resp = await sendCmd(ChameleonCommand.getEnabledSlots);
     List<EnabledSlotInfo> slots = [];
-    for (var slot = 0; slot < 16; slot++) {
+    var index = 0;
+    // Length-tolerant: official firmware returns 8 slots, the fork 16.
+    while (index + 2 <= resp!.data.length) {
       slots.add(
         EnabledSlotInfo(
-          hf: resp!.data[slot * 2] != 0,
-          lf: resp.data[slot * 2 + 1] != 0,
+          hf: resp.data[index] != 0,
+          lf: resp.data[index + 1] != 0,
         ),
       );
+      index += 2;
     }
     return slots;
   }
