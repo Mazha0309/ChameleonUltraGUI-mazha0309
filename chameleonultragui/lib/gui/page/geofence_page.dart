@@ -14,9 +14,12 @@ import 'package:chameleonultragui/helpers/geofence_service.dart';
 import 'package:chameleonultragui/generated/i18n/app_localizations.dart';
 import 'package:chameleonultragui/helpers/geo_convert.dart';
 
-/// AMap API key, injected at build time: flutter build apk --dart-define=AMAP_KEY=...
-/// Kept out of the repository on purpose (key is bound to the signing cert).
+/// AMap API keys, injected at build time:
+///   --dart-define=AMAP_KEY=...      (Android, bound to package + SHA1)
+///   --dart-define=AMAP_KEY_IOS=...  (iOS, bound to bundle id)
+/// Kept out of the repository on purpose (keys are bound to app identity).
 const String kAmapKey = String.fromEnvironment('AMAP_KEY');
+const String kAmapKeyIos = String.fromEnvironment('AMAP_KEY_IOS');
 
 class GeofencePage extends StatefulWidget {
   const GeofencePage({super.key});

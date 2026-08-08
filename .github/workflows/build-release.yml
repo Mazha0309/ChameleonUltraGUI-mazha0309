@@ -76,7 +76,7 @@ jobs:
         working-directory: chameleonultragui
         run: |
           flutter pub get
-          flutter build ios --release --no-codesign --dart-define=AMAP_KEY=${{ secrets.AMAP_KEY }}
+          flutter build ios --release --no-codesign --dart-define=AMAP_KEY=${{ secrets.AMAP_KEY }} --dart-define=AMAP_KEY_IOS=${{ secrets.AMAP_KEY_IOS }}
       - name: Package unsigned IPA
         run: |
           cd chameleonultragui
