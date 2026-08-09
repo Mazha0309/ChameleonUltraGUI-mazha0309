@@ -67,34 +67,53 @@ class ChameleonCommunicator {
     return frame;
   }
 
+  void _resyncParser() {
+    // Drop the partial frame and re-arm the parser at the next SOF byte.
+    dataPosition = 0;
+    dataBuffer = [];
+  }
+
   Future<void> onSerialMessage(List<int> message) async {
     log.t("Received: ${bytesToHex(Uint8List.fromList(message))}");
 
     for (var byte in message) {
+      // Runaway guard: if we never completed a frame within a sane size,
+      // drop the leading byte and re-look for the SOF.
+      if (dataPosition > 0 && dataBuffer.length > dataMaxLength + 11) {
+        log.w("Data frame too long, resyncing");
+        _resyncParser();
+      }
+
       dataBuffer.add(byte);
 
-      if (dataPosition < 2) {
+      if (dataPosition == 0) {
         // start of frame
-        if (dataPosition == 0) {
-          if (dataBuffer[dataPosition] != dataFrameSof) {
-            throw ('Data frame no sof byte.');
-          }
-        } else {
-          if (dataBuffer[dataPosition] != lrcCalc(dataBuffer.sublist(0, 1))) {
-            throw ('Data frame sof lrc error.');
-          }
+        if (dataBuffer[0] != dataFrameSof) {
+          // Skip non-SOF bytes while idle.
+          dataBuffer.removeAt(0);
+          continue;
+        }
+      } else if (dataPosition == 1) {
+        if (dataBuffer[1] != lrcCalc(dataBuffer.sublist(0, 1))) {
+          log.w("Data frame sof lrc error, resyncing");
+          _resyncParser();
+          continue;
         }
       } else if (dataPosition == 8) {
         // frame head lrc
-        if (dataBuffer[dataPosition] != lrcCalc(dataBuffer.sublist(0, 8))) {
-          throw ('Data frame head lrc error.');
+        if (dataBuffer[8] != lrcCalc(dataBuffer.sublist(0, 8))) {
+          log.w("Data frame head lrc error, resyncing");
+          _resyncParser();
+          continue;
         }
         // frame head complete, cache info
         dataCmd = _toInt16BE(Uint8List.fromList(dataBuffer.sublist(2, 4)));
         dataStatus = _toInt16BE(Uint8List.fromList(dataBuffer.sublist(4, 6)));
         dataLength = _toInt16BE(Uint8List.fromList(dataBuffer.sublist(6, 8)));
         if (dataLength > dataMaxLength) {
-          throw ('Data frame data length too than of max.');
+          log.w("Data frame length ${dataLength} exceeds max, resyncing");
+          _resyncParser();
+          continue;
         }
       } else if (dataPosition == (8 + dataLength + 1)) {
         if (dataBuffer[dataPosition] ==
@@ -113,7 +132,9 @@ class ChameleonCommunicator {
           messageQueue.add(message);
           return;
         } else {
-          throw ('Data frame finally lrc error.');
+          log.w("Data frame data lrc error, resyncing");
+          _resyncParser();
+          continue;
         }
       }
 
@@ -401,6 +422,9 @@ class ChameleonCommunicator {
     }
 
     resp.data = resp.data.sublist(1);
+    if (resp.data.length < 32) {
+      throw ("Invalid Darkside response length: ${resp.data.length}");
+    }
 
     return Darkside(
       uid: bytesToU32(resp.data.sublist(0, 4)),
@@ -957,6 +981,9 @@ class ChameleonCommunicator {
   }
 
   Future<void> enterDFUMode() async {
+    // The device is about to reboot into the bootloader: stop the heartbeat
+    // and let the DFU flow handle the connection.
+    stopHeartbeat();
     await sendCmd(ChameleonCommand.enterBootloader, skipReceive: true);
   }
 
@@ -1600,5 +1627,68 @@ class ChameleonCommunicator {
       isAntiColl: false,
       writeMode: mode, // write mode
     );
+  }
+
+  // ===== Heartbeat / keepalive =====
+  Timer? _heartbeatTimer;
+  int _heartbeatFailures = 0;
+  void Function()? onHeartbeatFailed;
+  static const Duration heartbeatInterval = Duration(seconds: 15);
+  static const int heartbeatMaxFailures = 2;
+
+  void startHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatFailures = 0;
+    _heartbeatTimer =
+        Timer.periodic(heartbeatInterval, (_) => _heartbeatTick());
+  }
+
+  void stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    _heartbeatFailures = 0;
+  }
+
+  Future<void> _heartbeatTick() async {
+    try {
+      await sendCmd(
+        ChameleonCommand.getGitVersion,
+        timeout: const Duration(seconds: 3),
+      );
+      _heartbeatFailures = 0;
+    } catch (e) {
+      _heartbeatFailures++;
+      log.w("Heartbeat failure $_heartbeatFailures/$heartbeatMaxFailures: $e");
+      if (_heartbeatFailures >= heartbeatMaxFailures) {
+        stopHeartbeat();
+        onHeartbeatFailed?.call();
+      }
+    }
+  }
+}
+
+/// Official status codes -> human readable description.
+String statusMessage(int status) {
+  switch (status) {
+    case 0x60:
+      return 'Parameter error';
+    case 0x61:
+      return 'Unknown command';
+    case 0x62:
+      return 'Command error';
+    case 0x63:
+      return 'Communication error';
+    case 0x68:
+      return 'Success';
+    case 0x69:
+      return 'Command not implemented';
+    case 0x6A:
+      return 'Channel not exists';
+    case 0x6B:
+      return 'Channel busy';
+    case 0x6C:
+      return 'Command blocked';
+    default:
+      return 'Status 0x${status.toRadixString(16).toUpperCase()}';
   }
 }

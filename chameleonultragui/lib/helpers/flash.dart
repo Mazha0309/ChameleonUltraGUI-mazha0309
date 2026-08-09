@@ -127,6 +127,7 @@ Future<void> flashFile(
     {bool enterDFU = true,
     List<int> firmwareZip = const [],
     ScaffoldMessengerState? scaffoldMessenger}) async {
+  try {
   validateFiles(applicationDat, applicationBin);
 
   // Flashing easter egg
@@ -138,6 +139,8 @@ Future<void> flashFile(
   }
 
   if (enterDFU) {
+    // Suppress auto-reconnect while the device reboots into DFU mode.
+    appState.suppressAutoReconnect();
     await connection?.enterDFUMode();
     await appState.connector?.performDisconnect();
   }
@@ -198,4 +201,8 @@ Future<void> flashFile(
   appState.connector!.performDisconnect();
   await asyncSleep(500); // allow exit DFU mode
   appState.changesMade();
+  } finally {
+    // Re-enable auto-reconnect once the DFU session is done.
+    appState.restoreAutoReconnect();
+  }
 }

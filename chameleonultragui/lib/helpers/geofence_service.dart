@@ -208,16 +208,47 @@ class GeofenceService {
   Future<void> _onEnter(
       ChameleonGUIState appState, GeofenceConfig fence) async {
     await _connectAndRun(appState, (communicator) async {
+      final prefs = appState.sharedPreferencesProvider;
       final originalSlot = await communicator.getActiveSlot();
-      appState.sharedPreferencesProvider
-          .setGeofenceOriginalSlot(fence.id, originalSlot);
+      prefs.setGeofenceOriginalSlot(fence.id, originalSlot);
+
       // Skip the switch when the device is already on the target slot.
-      if (originalSlot != fence.targetSlot) {
-        await communicator.activateSlot(fence.targetSlot);
-        _log('switched to slot ${fence.targetSlot + 1}');
-      } else {
+      if (originalSlot == fence.targetSlot) {
         _log('already on target slot ${fence.targetSlot + 1}, skip');
+        _recordHistory(prefs, fence, 'enter', true, 'already on slot');
+        return;
       }
+
+      // Validate the target slot has an enabled HF/LF card before switching.
+      final enabledSlots = await communicator.getEnabledSlots();
+      if (fence.targetSlot >= enabledSlots.length ||
+          (!enabledSlots[fence.targetSlot].hf &&
+              !enabledSlots[fence.targetSlot].lf)) {
+        _log('target slot ${fence.targetSlot + 1} has no valid card, skip');
+        _recordHistory(prefs, fence, 'enter', false, 'target slot has no valid card');
+        return;
+      }
+
+      await communicator.activateSlot(fence.targetSlot);
+      _log('switched to slot ${fence.targetSlot + 1}');
+      _recordHistory(prefs, fence, 'enter', true, null);
+    });
+  }
+
+  void _recordHistory(
+      SharedPreferencesProvider prefs,
+      GeofenceConfig fence,
+      String action,
+      bool success,
+      String? error) {
+    prefs.addGeofenceHistory({
+      'id': DateTime.now().millisecondsSinceEpoch,
+      'timestamp': DateTime.now().toIso8601String(),
+      'geofenceName': fence.name,
+      'slotId': fence.targetSlot,
+      'action': action,
+      'success': success,
+      'error': error,
     });
   }
 

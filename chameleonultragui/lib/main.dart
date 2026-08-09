@@ -86,6 +86,40 @@ class ChameleonGUIState extends ChangeNotifier {
   GlobalKey navigationRailKey = GlobalKey();
   Size? navigationRailSize;
 
+  void startHeartbeat() {
+    communicator?.onHeartbeatFailed = _onHeartbeatFailed;
+    communicator?.startHeartbeat();
+  }
+
+  void stopHeartbeat() {
+    communicator?.stopHeartbeat();
+  }
+
+  /// Disable auto-reconnect (used during DFU flashing where the device
+  /// reboots and the DFU flow manages its own connection).
+  void suppressAutoReconnect() {
+    stopHeartbeat();
+    if (connector is BLESerial) {
+      (connector as BLESerial).suppressAutoReconnect = true;
+    }
+  }
+
+  void restoreAutoReconnect() {
+    if (connector is BLESerial) {
+      (connector as BLESerial).suppressAutoReconnect = false;
+    }
+  }
+
+  Future<void> _onHeartbeatFailed() async {
+    log!.w("Heartbeat failed, attempting auto reconnect");
+    await connector?.performDisconnect();
+    if (connector is BLESerial) {
+      final ble = connector as BLESerial;
+      ble.onUnexpectedDisconnect = null;
+      await ble.scheduleReconnect();
+    }
+  }
+
   void changesMade() {
     notifyListeners();
   }

@@ -37,6 +37,7 @@ class GeofencePageState extends State<GeofencePage> {
   LatLng? _cameraCenter;
   bool _locating = false;
   Timer? _positionTimer;
+  List<Map<String, dynamic>> geofenceHistory = [];
 
   @override
   void initState() {
@@ -50,18 +51,41 @@ class GeofencePageState extends State<GeofencePage> {
     final prefs = appState.sharedPreferencesProvider;
     _fences = prefs.getGeofences();
     _guardEnabled = prefs.getGeofenceGuardEnabled();
+    geofenceHistory = prefs.getGeofenceHistory();
   }
 
   Future<void> _initCenter() async {
+    // 1) Instant center from the last known position (no GPS wait).
     try {
       if (await GeolocatorIsLocationEnabled() &&
           await GeolocatorHasPermission()) {
-        final pos =
-            await getCurrentPosition().timeout(const Duration(seconds: 8));
-        if (mounted) {
+        final last = await GeolocatorGetLastKnownPosition();
+        if (last != null && mounted) {
+          final (lat, lng) =
+              GeoConvert.wgs84ToGcj02(last.latitude, last.longitude);
           setState(() {
-            _myPosition = LatLng(pos.latitude, pos.longitude);
+            _myPosition = LatLng(lat, lng);
             _center = _myPosition;
+          });
+          _amapController
+              ?.moveCamera(amap.CameraUpdate.newLatLngZoom(_center!, 16));
+        }
+      }
+    } catch (_) {}
+
+    // 2) Refine with a medium-accuracy fix (much faster than high accuracy).
+    try {
+      if (await GeolocatorIsLocationEnabled() &&
+          await GeolocatorHasPermission()) {
+        final pos = await getCurrentPosition(
+                accuracy: geo.LocationAccuracy.medium)
+            .timeout(const Duration(seconds: 8));
+        if (mounted) {
+          final (lat, lng) =
+              GeoConvert.wgs84ToGcj02(pos.latitude, pos.longitude);
+          setState(() {
+            _myPosition = LatLng(lat, lng);
+            _center ??= _myPosition;
           });
           _amapController
               ?.moveCamera(amap.CameraUpdate.newLatLngZoom(_center!, 16));
@@ -184,6 +208,7 @@ class GeofencePageState extends State<GeofencePage> {
     final prefs = appState.sharedPreferencesProvider;
     _fences = prefs.getGeofences();
     _guardEnabled = prefs.getGeofenceGuardEnabled();
+    geofenceHistory = prefs.getGeofenceHistory();
 
     final latLngOrNull = (double? lat, double? lng) {
       if (lat == null || lng == null) return null;
@@ -318,6 +343,15 @@ class GeofencePageState extends State<GeofencePage> {
               ],
             ),
           ),
+          if (geofenceHistory.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text("历史记录 / History (${geofenceHistory.length})",
+                    style: const TextStyle(fontSize: 12)),
+              ),
+            ),
           Expanded(
             child: _fences.isEmpty
                 ? Center(child: Text(localizations.tap_map_to_add))
@@ -350,6 +384,33 @@ class GeofencePageState extends State<GeofencePage> {
                     ],
                   ),
           ),
+          if (geofenceHistory.isNotEmpty)
+            SizedBox(
+              height: 140,
+              child: ListView.builder(
+                itemCount: geofenceHistory.length,
+                itemBuilder: (context, index) {
+                  final h = geofenceHistory[index];
+                  return ListTile(
+                    dense: true,
+                    leading: Icon(
+                      h['success'] == true
+                          ? Icons.check_circle
+                          : Icons.cancel,
+                      color: h['success'] == true
+                          ? Colors.green
+                          : Colors.red,
+                      size: 18,
+                    ),
+                    title: Text(
+                        "${h['geofenceName']} -> 槽 ${(h['slotId'] as int) + 1}"),
+                    subtitle: Text(
+                        "${h['action']} · ${h['timestamp']}${h['error'] != null ? ' · ${h['error']}' : ''}",
+                        style: const TextStyle(fontSize: 11)),
+                  );
+                },
+              ),
+            ),
         ],
       ),
     );
@@ -491,7 +552,19 @@ Future<bool> GeolocatorHasPermission() async {
   return await geo.Geolocator.checkPermission() !=
       geo.LocationPermission.denied;
 }
-Future<geo.Position> getCurrentPosition() => geo.Geolocator.getCurrentPosition(
-      locationSettings:
-          const geo.LocationSettings(accuracy: geo.LocationAccuracy.medium),
-    );
+
+
+Future<geo.Position?> GeolocatorGetLastKnownPosition() async {
+  try {
+    return await geo.Geolocator.getLastKnownPosition();
+  } catch (_) {
+    return null;
+  }
+}
+
+Future<geo.Position> getCurrentPosition(
+    {geo.LocationAccuracy accuracy = geo.LocationAccuracy.medium}) {
+  return geo.Geolocator.getCurrentPosition(
+    locationSettings: geo.LocationSettings(accuracy: accuracy),
+  );
+}

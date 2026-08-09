@@ -506,12 +506,12 @@ class SettingsMainPageState extends State<SettingsMainPage> {
                                     onTap: () async {
                                       await launchUrl(
                                         Uri.parse(
-                                          'https://github.com/GameTec-live/ChameleonUltraGUI',
+                                          'https://github.com/Mazha0309/ChameleonUltraGUI-mazha0309',
                                         ),
                                       );
                                     },
                                     child: const Text(
-                                      'https://github.com/GameTec-live/ChameleonUltraGUI',
+                                      'https://github.com/Mazha0309/ChameleonUltraGUI-mazha0309',
                                     ),
                                   ),
                                   const SizedBox(height: 30),

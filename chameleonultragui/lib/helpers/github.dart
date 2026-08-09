@@ -174,22 +174,8 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
 }
 
 Future<String> resolveCommit(String commitHash) async {
-  if ('-'.allMatches(commitHash).length == 2) {
-    return commitHash.split("-")[2].replaceAll('g', ''); // v2.0.0-1-gXXXXXX
-  } else if (commitHash.startsWith('-dirty')) {
-    return commitHash; // v2.0.0-1-gXXXXXX-dirty
-  } else if ('-'.allMatches(commitHash).isEmpty) {
-    final tags = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/Mazha0309/ChameleonUltra-mazha0309/tags")))
-        .body
-        .toString());
-    for (var tag in tags) {
-      if (commitHash == tag['name']) {
-        return tag['commit']['sha'];
-      }
-    }
-  }
-
+  // Tag names are compared as-is (v2.2.0-mazha0309-XXX); no GitHub API call,
+  // so the update check never hits the anonymous rate limit.
   return commitHash;
 }
 
@@ -261,7 +247,7 @@ class ChangelogEntry {
 Future<List<dynamic>?> _fetchReleases() async {
   try {
     final response = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/GameTec-live/ChameleonUltraGUI/releases")))
+            "https://api.github.com/repos/Mazha0309/ChameleonUltraGUI-mazha0309/releases")))
         .body
         .toString());
 

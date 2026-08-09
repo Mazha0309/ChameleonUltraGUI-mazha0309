@@ -46,6 +46,8 @@ class SlotChangerState extends State<SlotChanger> {
       return [const Icon(Icons.warning)];
     }
 
+    _slotCount = usedSlots.length;
+
     for (int i = 0; i < usedSlots.length && i < 16; i++) {
       if (i == selectedSlot - 1) {
         icons.add(const Icon(
@@ -58,8 +60,15 @@ class SlotChangerState extends State<SlotChanger> {
         icons.add(const Icon(Icons.circle_outlined));
       }
     }
+    // Pad to 16 so the two-row display never indexes out of range
+    // (official 8-slot firmware yields fewer icons).
+    while (icons.length < 16) {
+      icons.add(const Icon(Icons.circle_outlined));
+    }
     return icons;
   }
+
+  int _slotCount = 16;
 
   List<Icon> presold = [
     const Icon(Icons.circle_outlined),
@@ -80,6 +89,7 @@ class SlotChangerState extends State<SlotChanger> {
         future: getFutureData(),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
+            final shown = presold.length >= _slotCount ? _slotCount : presold.length;
             return Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -87,19 +97,24 @@ class SlotChangerState extends State<SlotChanger> {
                   onPressed: () async {},
                   icon: const Icon(Icons.arrow_back),
                 ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: presold.sublist(0, 8),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: presold.sublist(8, 16),
-                    ),
-                  ],
-                ),
+                shown <= 8
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: presold.sublist(0, shown),
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: presold.sublist(0, 8),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: presold.sublist(8, 16),
+                          ),
+                        ],
+                      ),
                 IconButton(
                   onPressed: () async {},
                   icon: const Icon(Icons.arrow_forward),
@@ -127,19 +142,24 @@ class SlotChangerState extends State<SlotChanger> {
                   },
                   icon: const Icon(Icons.arrow_back),
                 ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: slotIcons.sublist(0, 8),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: slotIcons.sublist(8, 16),
-                    ),
-                  ],
-                ),
+                _slotCount <= 8
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: slotIcons.sublist(0, _slotCount),
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: slotIcons.sublist(0, 8),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: slotIcons.sublist(8, 16),
+                          ),
+                        ],
+                      ),
                 IconButton(
                   onPressed: () async {
                     if (selectedSlot < 16) {

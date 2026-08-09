@@ -32,9 +32,8 @@ class ToggleButtonsState extends State<ToggleButtonsWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return FittedBox(
-        alignment: Alignment.centerRight,
-        fit: BoxFit.scaleDown,
+    return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
         child: ToggleButtons(
           direction: Axis.horizontal,
           onPressed: (int index) async {
@@ -47,8 +46,8 @@ class ToggleButtonsState extends State<ToggleButtonsWrapper> {
           },
           borderRadius: const BorderRadius.all(Radius.circular(32)),
           constraints: const BoxConstraints(
-            minHeight: 40.0,
-            minWidth: 80.0,
+            minHeight: 32.0,
+            minWidth: 60.0,
           ),
           isSelected: values,
           children: textItems,

@@ -254,6 +254,7 @@ class _ConnectPageState extends State<ConnectPage> {
       final connected =
           await appState.connector!.connectSpecificDevice(chameleonDevice.port);
       if (connected) {
+        appState.startHeartbeat();
         appState.connector!.pendingConnection = false;
         appState.clearAutoReconnectSuppression(chameleonDevice.port);
         appState.communicator =

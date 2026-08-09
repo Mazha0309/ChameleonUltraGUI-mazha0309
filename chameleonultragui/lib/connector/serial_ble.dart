@@ -26,6 +26,15 @@ class BLESerial extends AbstractSerial {
   Map<String, Chameleon> chameleonMap = {};
   bool inSearch = false;
 
+  // Auto-reconnect support (port is the device id string)
+  String? lastDeviceId;
+  bool _intentionalDisconnect = false;
+  bool suppressAutoReconnect = false;
+  void Function()? onUnexpectedDisconnect;
+  int _reconnectAttempts = 0;
+  Timer? _reconnectTimer;
+  static const int maxReconnectAttempts = 3;
+
   BLESerial({required super.log});
 
   Future<List> availableDevices() async {
@@ -191,6 +200,7 @@ class BLESerial extends AbstractSerial {
           portName = devicePort;
           device = chameleonMap[devicePort]!.device;
           activeDevicePort = devicePort;
+          lastDeviceId = devicePort;
 
           isDFU = true;
           completer.complete(true);
@@ -253,6 +263,10 @@ class BLESerial extends AbstractSerial {
         }
       } else if (connectionState.connectionState ==
           DeviceConnectionState.disconnected) {
+        if (connected && !_intentionalDisconnect && !suppressAutoReconnect) {
+          log.w("Unexpected BLE disconnect");
+          onUnexpectedDisconnect?.call();
+        }
         await performDisconnect();
         try {
           completer.complete(false);
@@ -266,8 +280,42 @@ class BLESerial extends AbstractSerial {
     return completer.future;
   }
 
+  Future<bool> reconnectLast() async {
+    final id = lastDeviceId;
+    if (id == null) {
+      log.w("Reconnect skipped: no last device");
+      return false;
+    }
+    if (_reconnectAttempts >= maxReconnectAttempts) {
+      log.w("Reconnect limit reached");
+      return false;
+    }
+    _reconnectAttempts++;
+    log.w("Reconnecting (attempt $_reconnectAttempts/$maxReconnectAttempts)...");
+    final ok = await connectSpecificDevice(id);
+    if (ok) {
+      _reconnectAttempts = 0;
+    }
+    return ok;
+  }
+
+  Future<void> scheduleReconnect() async {
+    if (suppressAutoReconnect) {
+      return;
+    }
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(const Duration(seconds: 3), () async {
+      if (suppressAutoReconnect) {
+        return;
+      }
+      await reconnectLast();
+    });
+  }
+
   @override
   Future<bool> performDisconnect() async {
+    _intentionalDisconnect = true;
+    _reconnectTimer?.cancel();
     final hadState = hasConnectionState || connection != null;
     resetConnectionState();
     txCharacteristic = null;

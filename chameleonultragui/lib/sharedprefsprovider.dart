@@ -766,4 +766,32 @@ class SharedPreferencesProvider extends ChangeNotifier {
     _sharedPreferences.setString('fw_download_source', source);
     notifyListeners();
   }
+
+
+
+  List<Map<String, dynamic>> getGeofenceHistory() {
+    final raw = _sharedPreferences.getString('geofence_history');
+    if (raw == null || raw.isEmpty) {
+      return [];
+    }
+    try {
+      return (jsonDecode(raw) as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  void addGeofenceHistory(Map<String, dynamic> record) {
+    final history = getGeofenceHistory();
+    history.insert(0, record);
+    if (history.length > 50) {
+      history.removeRange(50, history.length);
+    }
+    _sharedPreferences.setString(
+        'geofence_history', jsonEncode(history));
+    notifyListeners();
+  }
+
 }
