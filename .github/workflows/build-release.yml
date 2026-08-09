@@ -33,15 +33,20 @@ jobs:
           keyAlias=$KEY_ALIAS
           storeFile=upload-keystore.jks
           EOF
-      - name: Build APK
+      - name: Build APKs
         working-directory: chameleonultragui
         run: |
           flutter pub get
-          flutter build apk --release --dart-define=AMAP_KEY=${{ secrets.AMAP_KEY }}
-      - name: Upload APK to Release
+          flutter build apk --release --dart-define=AMAP_KEY=${{ secrets.AMAP_KEY }} --dart-define=AMAP_KEY_IOS=${{ secrets.AMAP_KEY_IOS }}
+          flutter build apk --release --split-per-abi --dart-define=AMAP_KEY=${{ secrets.AMAP_KEY }} --dart-define=AMAP_KEY_IOS=${{ secrets.AMAP_KEY_IOS }}
+      - name: Upload APKs to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: chameleonultragui/build/app/outputs/flutter-apk/app-release.apk
+          files: |
+            chameleonultragui/build/app/outputs/flutter-apk/app-release.apk
+            chameleonultragui/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            chameleonultragui/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            chameleonultragui/build/app/outputs/flutter-apk/app-x86_64-release.apk
 
   windows:
     runs-on: windows-latest
