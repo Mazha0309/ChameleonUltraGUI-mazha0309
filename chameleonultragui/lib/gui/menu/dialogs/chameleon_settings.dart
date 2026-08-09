@@ -29,6 +29,7 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
   int pollingInterval = 500;
   bool pollingLoaded = false;
   bool abRebootEnable = true;
+  String fwDownloadSource = 'auto';
 
   @override
   void initState() {
@@ -46,6 +47,8 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
       pollingEnable = await appState.communicator!.getPollingEnable();
       pollingInterval = await appState.communicator!.getPollingInterval();
       abRebootEnable = await appState.communicator!.getAbRebootEnable();
+      fwDownloadSource =
+          appState.sharedPreferencesProvider.getFirmwareDownloadSource();
       pollingLoaded = true;
       if (mounted) {
         setState(() {});
@@ -440,6 +443,31 @@ class ChameleonSettingsState extends State<ChameleonSettings> {
                             setState(() => abRebootEnable = value);
                             await appState.communicator!
                                 .setAbRebootEnable(value);
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(localizations.fw_download_source),
+                        const SizedBox(width: 10),
+                        DropdownButton<String>(
+                          value: fwDownloadSource,
+                          items: const [
+                            DropdownMenuItem(
+                                value: 'auto', child: Text('自动 / Auto')),
+                            DropdownMenuItem(
+                                value: 'github', child: Text('GitHub')),
+                            DropdownMenuItem(
+                                value: 'jsdelivr', child: Text('jsDelivr')),
+                          ],
+                          onChanged: (value) async {
+                            if (value == null) return;
+                            setState(() => fwDownloadSource = value);
+                            appState.sharedPreferencesProvider
+                                .setFirmwareDownloadSource(value);
                           },
                         ),
                       ],

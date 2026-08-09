@@ -1951,6 +1951,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get view_dump => '查看数据';
+
+  @override
+  String get fw_download_source => '固件下载源:';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -3667,4 +3670,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get view_dump => '查看資料';
+
+  @override
+  String get fw_download_source => '韌體下載源:';
 }

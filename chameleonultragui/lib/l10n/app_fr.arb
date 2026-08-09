@@ -571,5 +571,6 @@
   "lf_sniff_load_failed": "\u00c9chec du chargement du fichier : {error}",
   "lf_sniff_loaded": "{count} \u00e9chantillon(s) charg\u00e9(s) depuis le fichier.",
   "sniff_device_required_hint": "Aucun appareil connect\u00e9. Connectez un Chameleon pour capturer, ou chargez un fichier enregistr\u00e9.",
-  "view_dump": "View dump"
+  "view_dump": "View dump",
+  "fw_download_source": "Firmware source:"
 }

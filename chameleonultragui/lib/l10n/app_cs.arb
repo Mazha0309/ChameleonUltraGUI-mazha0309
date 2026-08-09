@@ -401,5 +401,6 @@
   "skip_recovery": "P\u0159esko\u010dit obnovu",
   "resume_recovery": "Dokon\u010dit obnovu",
   "language_name": "\u010ce\u0161tina",
-  "view_dump": "View dump"
+  "view_dump": "View dump",
+  "fw_download_source": "Firmware source:"
 }

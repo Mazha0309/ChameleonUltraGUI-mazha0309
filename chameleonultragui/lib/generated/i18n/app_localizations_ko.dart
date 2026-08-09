@@ -1974,4 +1974,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get view_dump => 'View dump';
+
+  @override
+  String get fw_download_source => 'Firmware source:';
 }

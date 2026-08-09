@@ -757,4 +757,13 @@ class SharedPreferencesProvider extends ChangeNotifier {
   void setGeofenceEnteredIds(List<String> ids) {
     _sharedPreferences.setStringList('geofence_entered_ids', ids);
   }
+
+  String getFirmwareDownloadSource() {
+    return _sharedPreferences.getString('fw_download_source') ?? 'auto';
+  }
+
+  void setFirmwareDownloadSource(String source) {
+    _sharedPreferences.setString('fw_download_source', source);
+    notifyListeners();
+  }
 }

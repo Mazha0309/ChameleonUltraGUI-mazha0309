@@ -2027,6 +2027,9 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get view_dump => 'View dump';
+
+  @override
+  String get fw_download_source => 'Firmware source:';
 }
 
 /// The translations for Modern Greek, as used in Greece (`el_GR`).
@@ -2960,4 +2963,7 @@ class AppLocalizationsElGr extends AppLocalizationsEl {
 
   @override
   String get view_dump => 'View dump';
+
+  @override
+  String get fw_download_source => 'Firmware source:';
 }

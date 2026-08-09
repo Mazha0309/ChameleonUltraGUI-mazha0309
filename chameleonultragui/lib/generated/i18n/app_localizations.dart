@@ -3718,6 +3718,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View dump'**
   String get view_dump;
+
+  /// No description provided for @fw_download_source.
+  ///
+  /// In en, this message translates to:
+  /// **'Firmware source:'**
+  String get fw_download_source;
 }
 
 class _AppLocalizationsDelegate

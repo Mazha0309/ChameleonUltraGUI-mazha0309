@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 List<Map<String, String>> developers = [
   {
@@ -82,17 +83,43 @@ Future<List<Map<String, String>>> fetchGitHubContributors() async {
   }
 }
 
+const String _fwGithubUrl =
+    "https://github.com/Mazha0309/ChameleonUltra-mazha0309/releases/latest/download/ultra-dfu-app.zip";
+const String _fwJsDelivrUrl =
+    "https://cdn.jsdelivr.net/gh/Mazha0309/ChameleonUltra-mazha0309@main/releases/ultra-dfu-app.zip";
+
+Future<String> _firmwareDownloadSource() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('fw_download_source') ?? 'auto';
+}
+
 Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
-  // Direct asset URL: no GitHub API involvement, so no rate limit.
-  // https://github.com/<repo>/releases/latest/download/<asset>
+  // Download source per user setting: auto (github then jsDelivr),
+  // github (direct only), or jsdelivr (CDN only).
+  final source = await _firmwareDownloadSource();
   Uint8List content = Uint8List(0);
   String error = "";
 
-  try {
-    content = await http.readBytes(Uri.parse(
-        "https://github.com/Mazha0309/ChameleonUltra-mazha0309/releases/latest/download/ultra-dfu-app.zip"));
-  } catch (e) {
-    error = e.toString();
+  if (source == 'jsdelivr') {
+    try {
+      content = await http.readBytes(Uri.parse(_fwJsDelivrUrl));
+    } catch (e) {
+      error = e.toString();
+    }
+  } else {
+    try {
+      content = await http.readBytes(Uri.parse(_fwGithubUrl));
+    } catch (e) {
+      error = e.toString();
+    }
+    if (content.isEmpty && source == 'auto') {
+      try {
+        content = await http.readBytes(Uri.parse(_fwJsDelivrUrl));
+        error = "";
+      } catch (e) {
+        error = e.toString();
+      }
+    }
   }
 
   if (error.isNotEmpty) {
@@ -110,7 +137,7 @@ Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
 Future<String> latestAvailableCommit(ChameleonDevice device) async {
   // https://github.com/<repo>/releases/latest redirects (302) to
   // /releases/tag/<tag>; the tag name in the Location header is the newest
-  // firmware version. No GitHub API = no rate limit.
+  // firmware version. Falls back to the jsDelivr-served version.txt.
   try {
     final client = http.Client();
     try {
@@ -127,6 +154,19 @@ Future<String> latestAvailableCommit(ChameleonDevice device) async {
       }
     } finally {
       client.close();
+    }
+  } catch (_) {}
+
+  if (await _firmwareDownloadSource() == 'github') {
+    return "";
+  }
+
+  try {
+    final resp = await http.get(Uri.parse(
+        "https://cdn.jsdelivr.net/gh/Mazha0309/ChameleonUltra-mazha0309@main/releases/version.txt"));
+    final tag = resp.body.trim();
+    if (tag.isNotEmpty) {
+      return tag;
     }
   } catch (_) {}
 

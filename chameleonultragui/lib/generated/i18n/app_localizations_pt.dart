@@ -2019,6 +2019,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get view_dump => 'View dump';
+
+  @override
+  String get fw_download_source => 'Firmware source:';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -2693,4 +2696,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get view_dump => 'View dump';
+
+  @override
+  String get fw_download_source => 'Firmware source:';
 }

@@ -595,5 +595,6 @@
   "written_to_slot": "Written to slot {slot}",
   "slot_label": "Slot {index}",
   "field_generator": "Field generator",
-  "view_dump": "View dump"
+  "view_dump": "View dump",
+  "fw_download_source": "Firmware source:"
 }

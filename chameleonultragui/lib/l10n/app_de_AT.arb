@@ -228,5 +228,6 @@
   "export_to_dictionary": "Export in W\u00f6rterbuch",
   "enter_name_of_card": "Kartenname eingeben",
   "enter_name_of_dictionary": "W\u00f6rterbuchname eingeben",
-  "view_dump": "View dump"
+  "view_dump": "View dump",
+  "fw_download_source": "Firmware source:"
 }

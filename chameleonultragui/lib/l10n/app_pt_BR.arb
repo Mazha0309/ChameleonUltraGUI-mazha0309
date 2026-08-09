@@ -204,5 +204,6 @@
   "force_flashing": "For\u00e7ar flashing",
   "chameleon_flashing_title_easter_egg": "O seu Chameleon {model} est\u00e1 piscando",
   "chameleon_flashing_title": "Instalando o firmware no seu Chameleon {model}",
-  "view_dump": "View dump"
+  "view_dump": "View dump",
+  "fw_download_source": "Firmware source:"
 }

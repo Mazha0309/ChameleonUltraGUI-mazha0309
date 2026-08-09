@@ -308,5 +308,6 @@
   "create_card": "Opprett kort",
   "update_data_title": "Oppdatere kortdata?",
   "language_name": "Norsk",
-  "view_dump": "View dump"
+  "view_dump": "View dump",
+  "fw_download_source": "Firmware source:"
 }
