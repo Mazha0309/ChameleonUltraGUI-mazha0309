@@ -83,33 +83,17 @@ Future<List<Map<String, String>>> fetchGitHubContributors() async {
 }
 
 Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
+  // Direct asset URL: no GitHub API involvement, so no rate limit.
+  // https://github.com/<repo>/releases/latest/download/<asset>
   Uint8List content = Uint8List(0);
   String error = "";
 
   try {
-    final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/Mazha0309/ChameleonUltra-mazha0309/releases")))
-        .body
-        .toString());
-
-    if (releases is! List && releases.containsKey("message")) {
-      error = releases["message"];
-      throw error;
-    }
-
-    for (var release in releases) {
-      for (var file in release["assets"]) {
-        if (file["name"] == "ultra-dfu-app.zip") {
-          content =
-              await http.readBytes(Uri.parse(file["browser_download_url"]));
-          break;
-        }
-      }
-      if (content.isNotEmpty) {
-        break;
-      }
-    }
-  } catch (_) {}
+    content = await http.readBytes(Uri.parse(
+        "https://github.com/Mazha0309/ChameleonUltra-mazha0309/releases/latest/download/ultra-dfu-app.zip"));
+  } catch (e) {
+    error = e.toString();
+  }
 
   if (error.isNotEmpty) {
     throw error;
@@ -119,68 +103,32 @@ Future<Uint8List> fetchFirmwareFromReleases(ChameleonDevice device) async {
 }
 
 Future<Uint8List> fetchFirmwareFromActions(ChameleonDevice device) async {
-  Uint8List content = Uint8List(0);
-  String error = "";
-
-  try {
-    final artifacts = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/Mazha0309/ChameleonUltra-mazha0309/actions/artifacts?per_page=100")))
-        .body
-        .toString());
-
-    if (artifacts.containsKey("message")) {
-      error = artifacts["message"];
-      throw error;
-    }
-
-    for (var artifact in artifacts["artifacts"]) {
-      if (artifact["name"] ==
-              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app" &&
-          artifact["workflow_run"]["head_branch"] == "main" &&
-          artifact["workflow_run"]["head_repository_id"] == 581338100) {
-        content = await http.readBytes(Uri.parse(
-            "https://nightly.link/Mazha0309/ChameleonUltra-mazha0309/suites/${artifact["workflow_run"]["id"]}/artifacts/${artifact["id"]}"));
-        break;
-      }
-    }
-  } catch (_) {}
-
-  if (error.isNotEmpty) {
-    throw error;
-  }
-
-  return content;
+  // Same direct asset URL as the releases path (no API rate limits).
+  return fetchFirmwareFromReleases(device);
 }
 
 Future<String> latestAvailableCommit(ChameleonDevice device) async {
-  String error = "";
-
+  // https://github.com/<repo>/releases/latest redirects (302) to
+  // /releases/tag/<tag>; the tag name in the Location header is the newest
+  // firmware version. No GitHub API = no rate limit.
   try {
-    final releases = json.decode((await http.get(Uri.parse(
-            "https://api.github.com/repos/Mazha0309/ChameleonUltra-mazha0309/releases")))
-        .body
-        .toString());
-
-    if (releases is! List && releases.containsKey("message")) {
-      error = releases["message"];
-      throw error;
-    }
-
-    // Our fork's releases are versioned as v2.2.0-mazha0309-XXX tags;
-    // the latest release tag IS the newest available firmware.
-    for (var release in releases) {
-      if (release["assets"] is List &&
-          (release["assets"] as List).any((a) =>
-              a["name"] ==
-              "${(device == ChameleonDevice.ultra) ? "ultra" : "lite"}-dfu-app.zip")) {
-        return release["tag_name"] ?? "";
+    final client = http.Client();
+    try {
+      final resp = await client.get(
+          Uri.parse(
+              "https://github.com/Mazha0309/ChameleonUltra-mazha0309/releases/latest"),
+          headers: {"User-Agent": "chameleonultragui"});
+      final location = resp.headers["location"];
+      if (location != null) {
+        final tag = location.split("/").last;
+        if (tag.isNotEmpty) {
+          return tag;
+        }
       }
+    } finally {
+      client.close();
     }
   } catch (_) {}
-
-  if (error.isNotEmpty) {
-    throw error;
-  }
 
   return "";
 }
