@@ -3,7 +3,11 @@ import 'dart:math' as math;
 
 import 'package:amap_flutter_base/amap_flutter_base.dart';
 import 'package:amap_flutter_map/amap_flutter_map.dart' as amap;
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -38,6 +42,8 @@ class GeofencePageState extends State<GeofencePage> {
   bool _locating = false;
   Timer? _positionTimer;
   List<Map<String, dynamic>> geofenceHistory = [];
+  bool _drawingPolygon = false;
+  List<Map<String, double>> _drawPoints = [];
 
   @override
   void initState() {
@@ -120,6 +126,56 @@ class GeofencePageState extends State<GeofencePage> {
   void dispose() {
     _positionTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _exportGeofences() async {
+    try {
+      final path = await getApplicationDocumentsDirectory();
+      final file = File('${path.path}/cu_geofences.json');
+      await file.writeAsString(geofencesToJsonString(_fences));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('已导出到 ${file.path} / Exported')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('导出失败 / Export failed: $e')));
+      }
+    }
+  }
+
+  Future<void> _importGeofences() async {
+    try {
+      final picked = await FilePicker.pickFiles(
+          dialogTitle: '选择围栏配置 / Select geofence file',
+          type: FileType.custom,
+          allowedExtensions: ['json']);
+      if (picked == null || picked.files.isEmpty) return;
+      final content = await File(picked.files.first.path!).readAsString();
+      final imported = geofencesFromJsonString(content);
+      if (imported.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('文件无效 / Invalid file')));
+        }
+        return;
+      }
+      setState(() {
+        _fences = imported;
+      });
+      _save();
+      await GeofenceService.instance.refreshGeofences();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('已导入 ${imported.length} 个围栏 / Imported')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('导入失败 / Import failed: $e')));
+      }
+    }
   }
 
   Future<void> _toggleGuard(bool value) async {
@@ -216,7 +272,21 @@ class GeofencePageState extends State<GeofencePage> {
     };
 
     return Scaffold(
-      appBar: AppBar(title: Text(localizations.geofence)),
+      appBar: AppBar(
+        title: Text(localizations.geofence),
+        actions: [
+          IconButton(
+            tooltip: '导出围栏配置 / Export',
+            icon: const Icon(Icons.upload_file),
+            onPressed: _exportGeofences,
+          ),
+          IconButton(
+            tooltip: '导入围栏配置 / Import',
+            icon: const Icon(Icons.download),
+            onPressed: _importGeofences,
+          ),
+        ],
+      ),
       body: Column(
         children: [
           SwitchListTile(
@@ -259,7 +329,16 @@ class GeofencePageState extends State<GeofencePage> {
                   onCameraMoveEnd: (position) {
                     _cameraCenter = position.target;
                   },
-                  onTap: (latLng) => _addFence(latLng),
+                  onTap: _drawingPolygon
+                      ? (latLng) {
+                          setState(() {
+                            _drawPoints.add({
+                              'latitude': latLng.latitude,
+                              'longitude': latLng.longitude
+                            });
+                          });
+                        }
+                      : (latLng) => _addFence(latLng),
                   onLongPress: (latLng) => _addFence(latLng),
                   markers: {
                     if (_myPosition != null)
@@ -276,10 +355,26 @@ class GeofencePageState extends State<GeofencePage> {
                       ),
                   },
                   polygons: {
+                    if (_drawingPolygon && _drawPoints.length >= 2)
+                      amap.Polygon(
+                        points: [
+                          for (final p in _drawPoints)
+                            LatLng(p['latitude']!, p['longitude']!)
+                        ],
+                        strokeColor: const Color(0xAAFF9800),
+                        fillColor: const Color(0x22FF9800),
+                        strokeWidth: 2,
+                      ),
                     for (final f in _fences)
                       if (f.enabled)
                         amap.Polygon(
-                          points: _circlePoints(f),
+                          points: f.isPolygon
+                              ? [
+                                  for (final p in f.points)
+                                    LatLng(p['latitude']!,
+                                        p['longitude']!)
+                                ]
+                              : _circlePoints(f),
                           strokeColor: const Color(0xAA3B82F6),
                           fillColor: const Color(0x223B82F6),
                           strokeWidth: 2,
@@ -299,6 +394,19 @@ class GeofencePageState extends State<GeofencePage> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                         label: Text(localizations.locating),
+                      ),
+                    ),
+                  ),
+                if (_drawingPolygon)
+                  Positioned(
+                    top: 8,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Chip(
+                        label: Text(
+                            "绘制多边形：点击地图添加顶点 (${_drawPoints.length}) / "
+                            "Polygon drawing (${_drawPoints.length})"),
                       ),
                     ),
                   ),
@@ -326,6 +434,56 @@ class GeofencePageState extends State<GeofencePage> {
                         child: const Icon(Icons.my_location),
                       ),
                       const SizedBox(height: 8),
+                      FloatingActionButton.small(
+                        heroTag: 'polygon',
+                        tooltip: '绘制多边形围栏 / Draw polygon',
+                        onPressed: () {
+                          setState(() {
+                            _drawingPolygon = !_drawingPolygon;
+                            _drawPoints = [];
+                          });
+                        },
+                        child: Icon(_drawingPolygon
+                            ? Icons.close
+                            : Icons.hexagon_outlined),
+                      ),
+                      const SizedBox(height: 8),
+                      if (_drawingPolygon)
+                        FloatingActionButton.small(
+                          heroTag: 'polygonDone',
+                          tooltip: '完成 / Done',
+                          onPressed: _drawPoints.length >= 3
+                              ? () {
+                                  final fence = GeofenceConfig(
+                                    id: const Uuid().v4(),
+                                    name: "多边形围栏",
+                                    latitude: _drawPoints
+                                        .map((p) => p['latitude']!)
+                                        .reduce((a, b) => a + b) /
+                                        _drawPoints.length,
+                                    longitude: _drawPoints
+                                        .map((p) => p['longitude']!)
+                                        .reduce((a, b) => a + b) /
+                                        _drawPoints.length,
+                                    radiusMeters: 0,
+                                    targetSlot: 0,
+                                    enabled: true,
+                                    points:
+                                        List.of(_drawPoints),
+                                  );
+                                  setState(() {
+                                    _fences.add(fence);
+                                    _drawingPolygon = false;
+                                    _drawPoints = [];
+                                  });
+                                  _save();
+                                  GeofenceService.instance
+                                      .refreshGeofences();
+                                }
+                              : null,
+                          child: const Icon(Icons.check),
+                        ),
+                      if (_drawingPolygon) const SizedBox(height: 8),
                       FloatingActionButton.small(
                         heroTag: 'centerAdd',
                         tooltip: localizations.add_at_center,

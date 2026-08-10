@@ -115,6 +115,40 @@ class GeofenceService {
     _checkTimer = Timer.periodic(
         const Duration(seconds: _checkIntervalSeconds), (_) => _checkFences());
     _checkFences();
+    _initializeFenceStatuses();
+  }
+
+  /// On guard start, compute each fence's enter/exit state from the current
+  /// position so already-inside fences don't re-trigger a switch.
+  Future<void> _initializeFenceStatuses() async {
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) return;
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.medium),
+      );
+      final (myLat, myLng) =
+          GeoConvert.wgs84ToGcj02(position.latitude, position.longitude);
+      final prefs = _prefs;
+      final entered = prefs.getGeofenceEnteredIds().toSet();
+      for (final fence in prefs.getGeofences()) {
+        if (!fence.enabled) continue;
+        final inside = fence.isPolygon
+            ? isPointInPolygon(myLat, myLng, fence.points)
+            : (Geolocator.distanceBetween(
+                    myLat, myLng, fence.latitude, fence.longitude) <=
+                fence.radiusMeters);
+        if (inside) {
+          entered.add(fence.id);
+          _log('init: inside fence "${fence.name}"');
+        } else {
+          entered.remove(fence.id);
+        }
+      }
+      prefs.setGeofenceEnteredIds(entered.toList());
+    } catch (e) {
+      _log('fence status init failed: $e');
+    }
   }
 
   void _stopPeriodicCheck() {
@@ -181,15 +215,13 @@ class GeofenceService {
         'fences=${fences.length} entered=${enteredIds}');
 
     for (final fence in fences) {
-      final distance = Geolocator.distanceBetween(
-        myLat,
-        myLng,
-        fence.latitude,
-        fence.longitude,
-      );
-      final inside = distance <= fence.radiusMeters;
-      _log('fence "${fence.name}" dist=${distance.toStringAsFixed(0)}m '
-          'inside=$inside entered=${enteredIds.contains(fence.id)}');
+      final inside = fence.isPolygon
+          ? isPointInPolygon(myLat, myLng, fence.points)
+          : (Geolocator.distanceBetween(
+                  myLat, myLng, fence.latitude, fence.longitude) <=
+              fence.radiusMeters);
+      _log('fence "${fence.name}" inside=$inside '
+          'entered=${enteredIds.contains(fence.id)}');
 
       if (inside && !enteredIds.contains(fence.id)) {
         enteredIds.add(fence.id);
