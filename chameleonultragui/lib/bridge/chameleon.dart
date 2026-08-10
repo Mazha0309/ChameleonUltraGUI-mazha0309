@@ -1228,6 +1228,18 @@ class ChameleonCommunicator {
     );
   }
 
+  Future<int> getSlotPollingSkip() async {
+    var resp = await sendCmd(ChameleonCommand.getSlotPollingSkip);
+    return bytesToU16(resp!.data);
+  }
+
+  Future<void> setSlotPollingSkip(int mask) async {
+    await sendCmd(
+      ChameleonCommand.setSlotPollingSkip,
+      data: Uint8List.fromList([(mask >> 8) & 0xFF, mask & 0xFF]),
+    );
+  }
+
   Future<bool> getAbRebootEnable() async {
     var resp = await sendCmd(ChameleonCommand.getAbRebootEnable);
     return resp!.data[0] == 1;

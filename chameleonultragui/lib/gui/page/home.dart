@@ -4,6 +4,7 @@ import 'package:chameleonultragui/helpers/definitions.dart';
 import 'package:chameleonultragui/helpers/flash.dart';
 import 'package:chameleonultragui/helpers/general.dart';
 import 'package:chameleonultragui/helpers/github.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chameleonultragui/connector/serial_abstract.dart';
@@ -24,10 +25,23 @@ class HomePage extends StatefulWidget {
 class HomePageState extends State<HomePage> {
   int selectedSlot = 1;
   bool isLegacyFirmware = false;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
+    // Keep the slot display in sync while the device auto-polls.
+    _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<((Icon, BatteryCharge), String, List<String>, bool, bool)>

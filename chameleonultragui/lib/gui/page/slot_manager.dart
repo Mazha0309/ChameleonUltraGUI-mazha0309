@@ -33,6 +33,7 @@ class SlotManagerPageState extends State<SlotManagerPage> {
   );
 
   List<SlotNames> slotData = List.generate(16, (_) => SlotNames());
+  int slotPollingSkip = 0;
 
   int progress = -1;
   int gridPosition = 0;
@@ -49,6 +50,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
     usedSlots = await appState.communicator!.getSlotTagTypes();
     enabledSlots = await appState.communicator!.getEnabledSlots();
     slotData = await appState.communicator!.getSlotTagNames();
+    try {
+      slotPollingSkip = await appState.communicator!.getSlotPollingSkip();
+    } catch (_) {}
     // Pad to 16 so the fixed 16-cell grid never indexes out of range on
     // devices running official 8-slot firmware.
     usedSlots.addAll(
@@ -410,8 +414,40 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                   appState.connector!.performDisconnect();
                   return ErrorPage(errorMessage: snapshot.error.toString());
                 } else {
-                  return Expanded(
-                    child: AlignedGridView.count(
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            for (var i = 0; i < 16; i++)
+                              Tooltip(
+                                message: "槽 ${i + 1}",
+                                child: FilterChip(
+                                  label: Text("${i + 1}"),
+                                  selected: (slotPollingSkip & (1 << i)) == 0,
+                                  showCheckmark: false,
+                                  visualDensity: VisualDensity.compact,
+                                  onSelected: (selected) async {
+                                    final newMask = selected
+                                        ? (slotPollingSkip & ~(1 << i))
+                                        : (slotPollingSkip | (1 << i));
+                                    setState(() => slotPollingSkip = newMask);
+                                    await appState.communicator!
+                                        .setSlotPollingSkip(newMask);
+                                  },
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 8),
+                      Expanded(
+                        child: AlignedGridView.count(
                       padding: const EdgeInsets.all(20),
                       crossAxisCount:
                           MediaQuery.of(context).size.width >= 700 ? 2 : 1,
@@ -546,7 +582,9 @@ class SlotManagerPageState extends State<SlotManagerPage> {
                         );
                       },
                     ),
-                  );
+                  ),
+                ],
+              );
                 }
               },
             ),

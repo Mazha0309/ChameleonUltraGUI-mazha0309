@@ -51,6 +51,8 @@ enum ChameleonCommand {
   setPollingInterval(1044),
   getAbRebootEnable(1045),
   setAbRebootEnable(1046),
+  getSlotPollingSkip(1047),
+  setSlotPollingSkip(1048),
 
   // button config
   getButtonPressConfig(1026),
