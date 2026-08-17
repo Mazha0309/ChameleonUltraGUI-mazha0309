@@ -100,6 +100,8 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+      - name: Install pod build deps
+        run: brew install automake libtool
       - name: Build macOS
         working-directory: chameleonultragui
         run: |
