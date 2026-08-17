@@ -93,6 +93,28 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: chameleonultragui-ios.ipa
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Build macOS
+        working-directory: chameleonultragui
+        run: |
+          flutter pub get
+          flutter build macos --release --dart-define=AMAP_KEY=${{ secrets.AMAP_KEY }} --dart-define=AMAP_KEY_IOS=${{ secrets.AMAP_KEY_IOS }}
+      - name: Package DMG
+        run: |
+          cd chameleonultragui/build/macos/Build/Products/Release
+          hdiutil create -volname "ChameleonUltraGUI-mazha0309" \
+            -srcfolder chameleonultragui.app \
+            -ov -format UDZO ../../../../../../ChameleonUltraGUI-mazha0309-macos.dmg
+      - name: Upload DMG to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: chameleonultragui/ChameleonUltraGUI-mazha0309-macos.dmg
   linux:
     runs-on: ubuntu-latest
     steps:
