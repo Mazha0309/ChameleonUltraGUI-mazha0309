@@ -116,7 +116,7 @@ jobs:
       - name: Upload DMG to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: chameleonultragui/ChameleonUltraGUI-mazha0309-macos.dmg
+          files: ChameleonUltraGUI-mazha0309-macos.dmg
   linux:
     runs-on: ubuntu-latest
     steps:
